@@ -1,0 +1,23 @@
+name: Methodological safeguard
+description: Flag language, behaviour, or assumptions that may misrepresent qualitative practice.
+title: "[Safeguard]: "
+labels: ["methodology", "safeguard"]
+body:
+  - type: textarea
+    id: concern
+    attributes:
+      label: Concern
+      description: What could the interface imply or encourage?
+    validations:
+      required: true
+  - type: textarea
+    id: consequence
+    attributes:
+      label: Likely consequence
+      description: Consider interpretation, reflexivity, validity claims, human authority, and disclosure.
+    validations:
+      required: true
+  - type: textarea
+    id: change
+    attributes:
+      label: Suggested change or evidence needed

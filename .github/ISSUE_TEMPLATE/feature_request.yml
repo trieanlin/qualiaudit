@@ -1,0 +1,38 @@
+name: Feature request
+description: Propose a user-centred, method-aware improvement.
+title: "[Feature]: "
+labels: ["enhancement", "research-needed"]
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: Researcher need
+      description: What task or difficulty does this address, and for whom?
+    validations:
+      required: true
+  - type: textarea
+    id: workflow
+    attributes:
+      label: Proposed workflow
+    validations:
+      required: true
+  - type: textarea
+    id: method
+    attributes:
+      label: Methodological implications
+      description: How should this behave in codebook/framework and reflexive modes?
+    validations:
+      required: true
+  - type: textarea
+    id: risk
+    attributes:
+      label: Data, automation-bias, or accessibility risks
+  - type: checkboxes
+    id: boundary
+    attributes:
+      label: Product boundary
+      options:
+        - label: This does not give AI final decision authority.
+          required: true
+        - label: This can be demonstrated without real participant data.
+          required: true

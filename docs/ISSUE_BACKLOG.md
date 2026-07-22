@@ -1,0 +1,51 @@
+# Issue-ready development backlog
+
+These are the first scoped issues to create when the repository receives a GitHub remote. They are intentionally kept as user-visible outcomes rather than implementation fragments.
+
+## QA-01 — Import Excel workbooks with explicit sheet and column mapping
+
+**Phase:** Trustworthy import  
+**Outcome:** A researcher can select a `.xlsx` file, choose a codebook/coded-excerpt sheet, map columns, preview rows, and see validation before replacing the current material.  
+**Acceptance:** No silent coercion; formulas are read as displayed values; no workbook content leaves the browser; fixtures cover multiple sheets, blank cells, Unicode, and multi-code delimiters.
+
+## QA-02 — Export and restore a portable local project file
+
+**Phase:** Trustworthy import  
+**Outcome:** A review can be backed up and restored without an account or cloud database.  
+**Acceptance:** The format is versioned; restores show a summary before changing state; corrupted or future-version files fail safely; deletion of browser state is explicit.
+
+## QA-03 — Add a server-side reviewer adapter with transmission consent
+
+**Phase:** Optional real reviewer  
+**Outcome:** A researcher can opt into a real model only after seeing the provider and exact outbound fields.  
+**Acceptance:** Keys are server-side; cancelled consent sends nothing; mock fallback remains available; model/prompt/schema versions and provider disclosure appear in exports; human fields remain absent from the payload.
+
+## QA-04 — Validate and recover structured reviewer responses
+
+**Phase:** Optional real reviewer  
+**Outcome:** Invalid codes, missing evidence, malformed uncertainty, and provider failures become transparent review states rather than fabricated success.  
+**Acceptance:** Schema errors are visible; retry is user-controlled; invalid suggestions are classified in the queue; the original provider response is not exposed if it may contain sensitive content.
+
+## QA-05 — Create a versioned codebook-change ledger
+
+**Phase:** Richer audit practice  
+**Outcome:** “Revise codebook” decisions can record before/after definitions and identify affected excerpts.  
+**Acceptance:** Changes never rewrite the frozen snapshot; the audit shows author, rationale, timestamp, affected codes, and unresolved recoding work.
+
+## QA-06 — Generate a printable HTML audit report
+
+**Phase:** Richer audit practice  
+**Outcome:** A researcher can create a self-contained report with provenance, methods statement, decision log, unresolved cases, and evidence excerpts.  
+**Acceptance:** Print styles are readable; real-model provider fields are included when present; quoted data can be omitted or redacted; the report states limitations.
+
+## QA-07 — Conduct formative usability and automation-bias research
+
+**Phase:** Research and evaluation  
+**Outcome:** Product decisions are informed by observed use with qualitative researchers rather than assumed trust or productivity gains.  
+**Acceptance:** Study materials distinguish methods; evaluation considers anchoring, rationale quality, interpretive diversity, and refusal/rejection behaviour; negative findings are documented.
+
+## QA-08 — Accessibility audit of the complete review workflow
+
+**Phase:** Cross-cutting quality  
+**Outcome:** The sample flow meets WCAG 2.2 AA expectations for keyboard, focus, semantics, contrast, zoom, and reduced motion.  
+**Acceptance:** Automated checks are supplemented by keyboard and screen-reader testing; issues are tracked per screen; no status relies on colour alone.

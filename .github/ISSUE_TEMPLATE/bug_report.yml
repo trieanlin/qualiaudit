@@ -1,0 +1,41 @@
+name: Bug report
+description: Report reproducible behaviour that does not match the documented workflow.
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: Do not include real participant data, credentials, or sensitive research material.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+      description: Use fictional or redacted content only.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction steps
+      placeholder: "1. Open the synthetic review…"
+    validations:
+      required: true
+  - type: dropdown
+    id: method
+    attributes:
+      label: Analysis mode
+      options:
+        - Codebook / Framework Analysis
+        - Reflexive Thematic Analysis
+        - Both
+        - Not applicable
+  - type: input
+    id: environment
+    attributes:
+      label: Browser and operating system
