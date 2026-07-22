@@ -1,0 +1,2 @@
+excerpt_id,source_id,excerpt,context,human_code,human_rationale,human_confidence,second_coder_code,second_coder_rationale
+SYN-TEMPLATE-001,fictional-source-01,Replace this fictional excerpt with a locally handled record.,Optional context,ROUTINE_FIT,Explain the first-pass human interpretation.,medium,,
