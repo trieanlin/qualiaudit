@@ -146,6 +146,7 @@ v0.1 does not:
 - [Security and research-data guidance](SECURITY.md)
 - [Architecture note](docs/ARCHITECTURE.md)
 - [Issue-ready backlog](docs/ISSUE_BACKLOG.md)
+- [Release privacy and secret checklist](docs/RELEASE_CHECKLIST.md)
 
 ## Contributing
 

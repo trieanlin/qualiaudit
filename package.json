@@ -12,6 +12,7 @@
     "test:watch": "vitest",
     "typecheck": "tsc -b --pretty false",
     "lint": "eslint . --max-warnings 0",
+    "check:release": "node scripts/release-safety-check.mjs",
     "check": "npm run lint && npm run typecheck && npm run test && npm run build"
   },
   "dependencies": {
