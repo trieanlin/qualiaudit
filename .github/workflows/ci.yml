@@ -23,3 +23,6 @@ jobs:
         run: npm ci
       - name: Lint, type-check, test, and build
         run: npm run check
+      - name: Check release privacy and secrets
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: npm run check:release
