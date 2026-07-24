@@ -2,8 +2,10 @@ import { ArrowRight, Check, CircleAlert, Download, FileSpreadsheet, Info, Upload
 import { useMemo, useRef, useState } from 'react'
 import { SAMPLE_NOTICE } from '../data/sample'
 import { parseCsv } from '../lib/csv'
+import type { MappedImportRow, SpreadsheetImportKind } from '../lib/spreadsheet'
 import { validateCodebook, validateExcerpts } from '../lib/validation'
 import type { CodeDefinition, Confidence, HumanCodedExcerpt } from '../types'
+import { SpreadsheetImportDialog } from './SpreadsheetImportDialog'
 
 interface MaterialsProps {
   codebook: CodeDefinition[]
@@ -24,12 +26,38 @@ function readTextFile(file: File): Promise<string> {
 }
 
 function confidence(value: string): Confidence | undefined {
-  return value === 'low' || value === 'medium' || value === 'high' ? value : undefined
+  const normalized = value.trim().toLowerCase()
+  return normalized === 'low' || normalized === 'medium' || normalized === 'high' ? normalized : undefined
+}
+
+function codebookRows(rows: MappedImportRow[]): CodeDefinition[] {
+  return rows.map((row) => ({
+    code: row.code ?? '',
+    definition: row.definition ?? '',
+    include_when: row.include_when ?? '',
+    exclude_when: row.exclude_when ?? '',
+    ...(row.example ? { example: row.example } : {}),
+  }))
+}
+
+function excerptRows(rows: MappedImportRow[]): HumanCodedExcerpt[] {
+  return rows.map((row) => ({
+    excerpt_id: row.excerpt_id ?? '',
+    source_id: row.source_id ?? '',
+    excerpt: row.excerpt ?? '',
+    context: row.context || undefined,
+    human_code: row.human_code ?? '',
+    human_rationale: row.human_rationale || undefined,
+    human_confidence: confidence(row.human_confidence ?? ''),
+    second_coder_code: row.second_coder_code || undefined,
+    second_coder_rationale: row.second_coder_rationale || undefined,
+  }))
 }
 
 export function Materials({ codebook, excerpts, onChangeCodebook, onChangeExcerpts, onContinue, locked = false }: MaterialsProps) {
   const [tab, setTab] = useState<'codebook' | 'coding'>('codebook')
   const [importMessage, setImportMessage] = useState('')
+  const [spreadsheetImport, setSpreadsheetImport] = useState<{ file: File; kind: SpreadsheetImportKind; sample?: boolean } | null>(null)
   const codebookInput = useRef<HTMLInputElement>(null)
   const excerptsInput = useRef<HTMLInputElement>(null)
   const codebookIssues = useMemo(() => validateCodebook(codebook), [codebook])
@@ -40,32 +68,51 @@ export function Materials({ codebook, excerpts, onChangeCodebook, onChangeExcerp
 
   const importCodebook = async (file?: File) => {
     if (!file) return
-    const rows = parseCsv(await readTextFile(file)).map((row) => ({
-      code: row.code ?? '',
-      definition: row.definition ?? '',
-      include_when: row.include_when ?? '',
-      exclude_when: row.exclude_when ?? '',
-      ...(row.example ? { example: row.example } : {}),
-    }))
+    if (file.name.toLowerCase().endsWith('.xlsx')) {
+      setSpreadsheetImport({ file, kind: 'codebook' })
+      return
+    }
+    const rows = codebookRows(parseCsv(await readTextFile(file)))
     onChangeCodebook(rows)
     setImportMessage(`Imported ${rows.length} codebook rows from ${file.name}.`)
   }
 
   const importExcerpts = async (file?: File) => {
     if (!file) return
-    const rows = parseCsv(await readTextFile(file)).map((row) => ({
-      excerpt_id: row.excerpt_id ?? '',
-      source_id: row.source_id ?? '',
-      excerpt: row.excerpt ?? '',
-      context: row.context || undefined,
-      human_code: row.human_code ?? '',
-      human_rationale: row.human_rationale || undefined,
-      human_confidence: confidence(row.human_confidence ?? ''),
-      second_coder_code: row.second_coder_code || undefined,
-      second_coder_rationale: row.second_coder_rationale || undefined,
-    }))
+    if (file.name.toLowerCase().endsWith('.xlsx')) {
+      setSpreadsheetImport({ file, kind: 'excerpts' })
+      return
+    }
+    const rows = excerptRows(parseCsv(await readTextFile(file)))
     onChangeExcerpts(rows)
     setImportMessage(`Imported ${rows.length} coded excerpts from ${file.name}.`)
+  }
+
+  const importSpreadsheetRows = (rows: MappedImportRow[], source: string) => {
+    if (!spreadsheetImport) return
+    if (spreadsheetImport.kind === 'codebook') {
+      const importedRows = codebookRows(rows)
+      onChangeCodebook(importedRows)
+      setImportMessage(`Imported ${importedRows.length} codebook rows from ${source}.`)
+    } else {
+      const importedRows = excerptRows(rows)
+      onChangeExcerpts(importedRows)
+      setImportMessage(`Imported ${importedRows.length} coded excerpts from ${source}.`)
+    }
+    setSpreadsheetImport(null)
+  }
+
+  const openExcelSample = async () => {
+    try {
+      const response = await fetch('/samples/synthetic-qualiaudit-import.xlsx')
+      if (!response.ok) throw new Error('Sample workbook unavailable')
+      const file = new File([await response.blob()], 'synthetic-qualiaudit-import.xlsx', {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      })
+      setSpreadsheetImport({ file, kind: tab === 'codebook' ? 'codebook' : 'excerpts', sample: true })
+    } catch {
+      setImportMessage('The Excel sample could not be opened. You can still import a local CSV or .xlsx file.')
+    }
   }
 
   const visibleIssues = tab === 'codebook' ? codebookIssues : excerptIssues
@@ -84,7 +131,7 @@ export function Materials({ codebook, excerpts, onChangeCodebook, onChangeExcerp
         </div>
       </div>
 
-      <div className="notice-bar"><Info size={17} /><strong>{SAMPLE_NOTICE}</strong><span>Replace it with a CSV when you are ready to test your own structure locally.</span></div>
+      <div className="notice-bar"><Info size={17} /><strong>{SAMPLE_NOTICE}</strong><span>Replace it with a CSV or .xlsx workbook when you are ready to test your own structure locally.</span></div>
       {locked && <div className="locked-notice"><span>Frozen record</span>These materials are read-only. They are the exact snapshot used for the independent review.</div>}
 
       <div className="material-tabs" role="tablist" aria-label="Review materials">
@@ -106,11 +153,14 @@ export function Materials({ codebook, excerpts, onChangeCodebook, onChangeExcerp
             <a className="button quiet" href={tab === 'codebook' ? '/samples/codebook-template.csv' : '/samples/coded-excerpts-template.csv'} download>
               <Download size={16} /> Template
             </a>
-            <button className="button secondary compact" type="button" disabled={locked} onClick={() => (tab === 'codebook' ? codebookInput : excerptsInput).current?.click()}>
-              <Upload size={16} /> Upload CSV
+            <button className="button quiet compact" type="button" disabled={locked} onClick={() => void openExcelSample()}>
+              <FileSpreadsheet size={16} /> Try Excel sample
             </button>
-            <input ref={codebookInput} hidden type="file" accept=".csv,text/csv" onChange={(event) => void importCodebook(event.target.files?.[0])} />
-            <input ref={excerptsInput} hidden type="file" accept=".csv,text/csv" onChange={(event) => void importExcerpts(event.target.files?.[0])} />
+            <button className="button secondary compact" type="button" disabled={locked} onClick={() => (tab === 'codebook' ? codebookInput : excerptsInput).current?.click()}>
+              <Upload size={16} /> Import CSV / Excel
+            </button>
+            <input ref={codebookInput} hidden type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={(event) => void importCodebook(event.target.files?.[0])} />
+            <input ref={excerptsInput} hidden type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={(event) => void importExcerpts(event.target.files?.[0])} />
           </div>
         </div>
 
@@ -160,6 +210,16 @@ export function Materials({ codebook, excerpts, onChangeCodebook, onChangeExcerp
         <div><strong>{codebook.length} codes · {excerpts.length} excerpts</strong><span>{locked ? 'Frozen snapshot used by the completed review.' : ready ? 'All required fields are present.' : 'Resolve validation errors before freezing.'}</span></div>
         <button className="button primary" type="button" onClick={onContinue} disabled={!ready}>{locked ? 'Return to review queue' : 'Prepare blind review'} <ArrowRight size={17} /></button>
       </div>
+
+      {spreadsheetImport && (
+        <SpreadsheetImportDialog
+          file={spreadsheetImport.file}
+          kind={spreadsheetImport.kind}
+          downloadUrl={spreadsheetImport.sample ? '/samples/synthetic-qualiaudit-import.xlsx' : undefined}
+          onClose={() => setSpreadsheetImport(null)}
+          onImport={importSpreadsheetRows}
+        />
+      )}
     </div>
   )
 }

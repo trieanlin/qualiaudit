@@ -26,12 +26,12 @@ Researchers already doing qualitative coding in Excel, NVivo, MAXQDA, or ATLAS.t
 
 The initial audience is qualitative researchers and doctoral researchers working with interviews or open-ended text who understand their method but may not program.
 
-## v0.1 vertical slice
+## Current vertical slice
 
-The current browser-only demo supports a complete synthetic workflow:
+The browser-only demo supports a complete synthetic workflow. The default branch contains the v0.1 release; the current roadmap adds trustworthy spreadsheet import without changing the blind-review boundary.
 
 1. Open a clearly labelled fictional home sleep-monitoring project.
-2. Inspect a CSV-shaped codebook and human first-pass coding.
+2. Inspect or locally import a CSV/Excel codebook and human first-pass coding.
 3. Validate required fields, duplicate codes, missing definitions, and missing inclusion/exclusion guidance.
 4. Freeze a time-stamped snapshot of the human interpretation.
 5. Run a local deterministic reviewer on a blind payload.
@@ -88,7 +88,7 @@ npm run dev
 
 Open the local URL printed by Vite, normally `http://localhost:5173`.
 
-No environment variable is needed for the deterministic v0.1 reviewer. `.env.example` reserves the future server-side model configuration without putting a key in frontend code.
+No environment variable is needed for the deterministic reviewer. `.env.example` reserves future server-side model configuration without putting a key in frontend code.
 
 ## Quality checks
 
@@ -103,7 +103,7 @@ npm run check:release
 npm run check
 ```
 
-The test suite covers validation, blind payload construction, deterministic review structure, method-aware queue labels, comparison categories, and CSV/JSON audit data.
+The test suite covers validation, blind payload construction, deterministic review structure, method-aware queue labels, comparison categories, spreadsheet mapping, the downloadable workbook fixture, and CSV/JSON audit data.
 
 ## Data and templates
 
@@ -111,9 +111,12 @@ The bundled files under [`public/samples`](public/samples) are fictional and con
 
 - [`synthetic-codebook.csv`](public/samples/synthetic-codebook.csv)
 - [`synthetic-coded-excerpts.csv`](public/samples/synthetic-coded-excerpts.csv)
+- [`synthetic-qualiaudit-import.xlsx`](public/samples/synthetic-qualiaudit-import.xlsx)
 - blank-shape codebook and coded-excerpt templates
 
-CSV upload is implemented for codebooks and human-coded excerpts. Excel workbooks and direct exports from qualitative research tools are roadmap items; v0.1 does not parse proprietary project files.
+CSV and Excel (`.xlsx`) upload are implemented for codebooks and human-coded excerpts. Excel import includes worksheet selection, header-row detection, explicit column mapping, and a source preview before replacement. Workbook parsing happens in the browser and the demo supports up to 10 MB or 5,000 rows per selected sheet.
+
+Direct export profiles for qualitative research tools remain roadmap items. QualiAudit does not parse proprietary project files.
 
 ## Technology choices
 
@@ -121,6 +124,7 @@ CSV upload is implemented for codebooks and human-coded excerpts. Excel workbook
 - **Vite** provides a fast, small, reproducible frontend build without prescribing a backend.
 - **Plain CSS** keeps the visual system inspectable and avoids locking an early research product into a component framework.
 - **Vitest + Testing Library** support fast unit and interaction-oriented testing in the same TypeScript toolchain.
+- **read-excel-file** provides a narrowly scoped, browser-compatible `.xlsx` parser without introducing a server or exposing imported files to a third party.
 - **Local-first browser state** is appropriate for a synthetic no-login demo and makes the data boundary easy to inspect. It is not presented as secure storage for sensitive studies.
 
 The dependency lockfile is committed; use `npm ci` for reproducible installation.
@@ -140,7 +144,7 @@ v0.1 does not:
 
 - The deterministic reviewer uses transparent keyword-oriented rules. Its readings demonstrate the review workflow, not model quality.
 - Browser `localStorage` is not suitable for sensitive or regulated research data. Use only fictional or appropriately governed material in v0.1.
-- CSV parsing covers common quoted CSV but is not yet a complete dialect-detection or spreadsheet-import system.
+- CSV parsing covers common quoted CSV but does not yet perform complete dialect detection. Excel import is intentionally limited to `.xlsx`, 10 MB, and 5,000 rows per selected sheet; formulas are imported as their stored values and encrypted workbooks are unsupported.
 - Human decisions after AI exposure may be influenced by automation bias even when the review is blind. QualiAudit records changes; it cannot remove that influence.
 - Descriptive human–AI overlap is not intercoder reliability, methodological validation, or evidence of correctness.
 - The draft methods statement must be adapted to the actual method, model, provider, governance, and institutional requirements.

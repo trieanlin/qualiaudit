@@ -14,7 +14,7 @@ describe('frozen record safeguards', () => {
     expect(screen.getByRole('button', { name: /Return to review queue/ })).toBeEnabled()
   })
 
-  it('prevents a CSV upload from replacing frozen review materials', () => {
+  it('prevents a CSV or Excel import from replacing frozen review materials', () => {
     render(
       <Materials
         codebook={SAMPLE_CODEBOOK}
@@ -27,7 +27,7 @@ describe('frozen record safeguards', () => {
     )
 
     expect(screen.getByText(/exact snapshot used for the independent review/)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Upload CSV' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Import CSV / Excel' })).toBeDisabled()
     expect(screen.getByRole('button', { name: /Return to review queue/ })).toBeEnabled()
   })
 })

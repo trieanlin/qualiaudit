@@ -4,6 +4,7 @@ dist
 .env.*
 !.env.example
 coverage
+outputs/
 .DS_Store
 *.log
 *.pem

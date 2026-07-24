@@ -2,6 +2,15 @@
 
 All notable changes to QualiAudit are documented here. The project follows [Semantic Versioning](https://semver.org/) once stable releases begin.
 
+## [Unreleased]
+
+### Added
+
+- Browser-local Excel (`.xlsx`) import for codebooks and human-coded excerpts.
+- Worksheet selection, header-row detection, explicit column mapping, and a four-row source preview.
+- A downloadable fictional two-sheet workbook and an in-app “Try Excel sample” path.
+- File-size and row-count guardrails, Chinese/common export-header aliases, and workbook fixture tests.
+
 ## [0.1.0] - 2026-07-22
 
 ### Added
