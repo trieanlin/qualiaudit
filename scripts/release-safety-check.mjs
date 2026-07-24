@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 
 const githubNoreplyEmail = /^(?:\d+\+)?[A-Za-z0-9-]+@users\.noreply\.github\.com$/i
+const githubWebCommitterEmail = /^noreply@github\.com$/i
 
 const contentRules = [
   ['OpenAI-style API key', /\bsk-(?:proj-)?[A-Za-z0-9_-]{16,}\b/g],
@@ -50,7 +51,7 @@ for (const [authorName, authorEmail, committerName, committerEmail] of metadata.
     !authorName?.trim()
     || !committerName?.trim()
     || !githubNoreplyEmail.test(authorEmail)
-    || !githubNoreplyEmail.test(committerEmail)
+    || (!githubNoreplyEmail.test(committerEmail) && !githubWebCommitterEmail.test(committerEmail))
   ) {
     issues.push('Git commit metadata: author and committer must use a GitHub noreply email')
     break
