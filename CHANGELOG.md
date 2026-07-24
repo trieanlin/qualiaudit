@@ -10,6 +10,10 @@ All notable changes to QualiAudit are documented here. The project follows [Sema
 - Worksheet selection, header-row detection, explicit column mapping, and a four-row source preview.
 - A downloadable fictional two-sheet workbook and an in-app “Try Excel sample” path.
 - File-size and row-count guardrails, Chinese/common export-header aliases, and workbook fixture tests.
+- Versioned, browser-local QualiAudit project export and restore.
+- A restore preview showing project identity, method, progress, counts, and export date before state replacement.
+- Strict project-file validation, safe rejection of malformed/future-version files, and recovery tests for frozen reviews and decision logs.
+- Clear separation between resumable project files and non-resumable audit JSON exports.
 
 ## [0.1.0] - 2026-07-22
 

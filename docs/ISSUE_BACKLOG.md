@@ -5,12 +5,14 @@ These are the first scoped issues to create when the repository receives a GitHu
 ## QA-01 — Import Excel workbooks with explicit sheet and column mapping
 
 **Phase:** Trustworthy import  
+**Status:** Complete
 **Outcome:** A researcher can select a `.xlsx` file, choose a codebook/coded-excerpt sheet, map columns, preview rows, and see validation before replacing the current material.  
 **Acceptance:** No silent coercion; formulas are read as displayed values; no workbook content leaves the browser; fixtures cover multiple sheets, blank cells, Unicode, and multi-code delimiters.
 
 ## QA-02 — Export and restore a portable local project file
 
 **Phase:** Trustworthy import  
+**Status:** Complete
 **Outcome:** A review can be backed up and restored without an account or cloud database.  
 **Acceptance:** The format is versioned; restores show a summary before changing state; corrupted or future-version files fail safely; deletion of browser state is explicit.
 

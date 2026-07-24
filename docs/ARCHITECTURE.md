@@ -9,7 +9,8 @@ The domain layer remains UI-independent:
 - `validation.ts` performs declared rule checks.
 - `reviewer.ts` creates a narrow blind payload and runs the deterministic reviewer.
 - `queue.ts` compares the already-independent reading with the frozen human record.
-- `export.ts` constructs portable reviewed rows and the full audit bundle.
+- `export.ts` constructs reviewed rows and the non-resumable audit bundle.
+- `projectFile.ts` serialises and validates a versioned, resumable copy of `ReviewState`.
 
 ## Information flow
 
@@ -29,9 +30,14 @@ Human-coded CSV ──► validation ──► frozen snapshot
                                                      │
                                                      ▼
                                       human resolution + audit export
+                                                     │
+                                                     ▼
+                                      local project save / restore
 ```
 
 Human fields do not flow through the blind-payload branch. Comparison occurs only after the reviewer result exists.
+
+Project files intentionally sit outside the reviewer boundary: they preserve the complete application state for the human researcher and therefore include fields withheld from AI. Import validation rejects malformed structure, unsupported schema versions, duplicate record IDs, resolutions without reviews, and reviews that are not backed by the frozen excerpt set. Restores never transmit the file and never treat audit JSON as a resumable project.
 
 ## Adding a real reviewer
 

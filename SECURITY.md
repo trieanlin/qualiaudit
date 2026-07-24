@@ -10,7 +10,9 @@ Until a dedicated private reporting channel is configured, do not post participa
 
 ## Data boundary in v0.1
 
-The bundled demo uses fictional data and sends no excerpts to a model provider or application backend. CSV and Excel files are parsed in the browser; imported content is not uploaded by QualiAudit. Project state is stored in browser `localStorage`. This is convenient, not secure research-data storage: other users or software with access to the same browser profile may be able to read it.
+The bundled demo uses fictional data and sends no excerpts to a model provider or application backend. CSV, Excel, and QualiAudit project files are parsed in the browser; imported content is not uploaded by QualiAudit. Project state is stored in browser `localStorage`. This is convenient, not secure research-data storage: other users or software with access to the same browser profile may be able to read it.
+
+Downloaded `.qualiaudit.json` files are plain-text, resumable backups rather than encrypted archives. They can contain the complete research record: source excerpts and context, human and second-coder judgments, rationales and confidence, frozen snapshots, AI reviews, and resolution history. Store, transfer, retain, and delete them under the same governance controls as the source research data. The restore flow validates structure and shows a summary, but it does not establish that the file is trustworthy or free of sensitive content.
 
 Do not use v0.1 with sensitive, identifiable, embargoed, or regulated research material. A future real-model adapter must complete a threat model, explicit transmission consent flow, provider disclosure, secret-management review, and institutional governance guidance before being described as suitable for real research data.
 

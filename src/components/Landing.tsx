@@ -1,7 +1,19 @@
-import { ArrowRight, EyeOff, FileClock, GitCompareArrows, ShieldCheck } from 'lucide-react'
+import { ArrowRight, EyeOff, FileClock, FileUp, GitCompareArrows, ShieldCheck } from 'lucide-react'
+import { useRef, useState } from 'react'
+import type { ReviewState } from '../hooks/useReviewState'
+import { ProjectFileImportDialog } from './ProjectFileImportDialog'
 import { AppHeader } from './Shell'
 
-export function Landing({ onOpenSample, onNewReview }: { onOpenSample: () => void; onNewReview: () => void }) {
+interface LandingProps {
+  onOpenSample: () => void
+  onNewReview: () => void
+  onRestoreProject: (state: ReviewState) => void
+}
+
+export function Landing({ onOpenSample, onNewReview, onRestoreProject }: LandingProps) {
+  const [projectFile, setProjectFile] = useState<File | null>(null)
+  const projectInput = useRef<HTMLInputElement>(null)
+
   return (
     <div className="landing-page">
       <AppHeader onReset={() => undefined} inProject={false} />
@@ -18,6 +30,19 @@ export function Landing({ onOpenSample, onNewReview }: { onOpenSample: () => voi
                 Open synthetic review <ArrowRight size={18} />
               </button>
               <button className="button secondary large" type="button" onClick={onNewReview}>Set up a review</button>
+              <button className="button quiet large" type="button" onClick={() => projectInput.current?.click()}>
+                <FileUp size={17} /> Open project file
+              </button>
+              <input
+                ref={projectInput}
+                hidden
+                type="file"
+                accept=".json,.qualiaudit.json,application/json"
+                onChange={(event) => {
+                  setProjectFile(event.target.files?.[0] ?? null)
+                  event.currentTarget.value = ''
+                }}
+              />
             </div>
             <p className="demo-reassurance"><ShieldCheck size={15} /> Fictional data. Runs locally. No API key or account.</p>
           </div>
@@ -66,6 +91,16 @@ export function Landing({ onOpenSample, onNewReview }: { onOpenSample: () => voi
         <span>Open-source foundations for transparent qualitative research.</span>
         <span>QualiAudit · Synthetic demo</span>
       </footer>
+      {projectFile && (
+        <ProjectFileImportDialog
+          file={projectFile}
+          onClose={() => setProjectFile(null)}
+          onRestore={(state) => {
+            setProjectFile(null)
+            onRestoreProject(state)
+          }}
+        />
+      )}
     </div>
   )
 }

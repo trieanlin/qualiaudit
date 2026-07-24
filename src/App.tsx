@@ -9,6 +9,8 @@ import { Setup } from './components/Setup'
 import { Shell } from './components/Shell'
 import { SAMPLE_CODEBOOK, SAMPLE_EXCERPTS, SAMPLE_PROJECT } from './data/sample'
 import { useReviewState } from './hooks/useReviewState'
+import { downloadText } from './lib/export'
+import { projectFileName, serialisePortableProject } from './lib/projectFile'
 import type { AiReview, ProjectBrief, Resolution } from './types'
 
 function cloneSample() {
@@ -20,7 +22,7 @@ function cloneSample() {
 }
 
 export default function App() {
-  const { state, patchState, reset } = useReviewState()
+  const { state, setState, patchState, reset } = useReviewState()
 
   const openSample = () => {
     const sample = cloneSample()
@@ -33,10 +35,19 @@ export default function App() {
   }
 
   const handleReset = () => {
-    if (state.view === 'landing' || window.confirm('Start over? This clears the locally saved demo review.')) reset()
+    if (state.view === 'landing' || window.confirm('Start over? This clears the review saved in this browser. Save a project file first if you need to resume it later.')) reset()
   }
 
   const saveProject = (project: ProjectBrief) => patchState({ project, view: 'materials' })
+
+  const saveProjectFile = () => {
+    if (!state.project) return
+    downloadText(
+      projectFileName(state.project.name),
+      serialisePortableProject(state),
+      'application/json;charset=utf-8',
+    )
+  }
 
   const freeze = () => {
     if (!state.project) return
@@ -67,7 +78,7 @@ export default function App() {
   const navigate = (view: typeof state.view) => patchState({ view, selectedExcerptId: null })
 
   if (state.view === 'landing' || !state.project) {
-    return <Landing onOpenSample={openSample} onNewReview={startSetup} />
+    return <Landing onOpenSample={openSample} onNewReview={startSetup} onRestoreProject={setState} />
   }
 
   const activeProject = state.frozen?.project ?? state.project
@@ -85,6 +96,7 @@ export default function App() {
       canAudit={Boolean(state.frozen && state.reviews.length)}
       onNavigate={navigate}
       onReset={handleReset}
+      onSaveProject={saveProjectFile}
     >
       {state.view === 'setup' && (
         <Setup

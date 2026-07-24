@@ -28,7 +28,7 @@ The initial audience is qualitative researchers and doctoral researchers working
 
 ## Current vertical slice
 
-The browser-only demo supports a complete synthetic workflow. The default branch contains the v0.1 release; the current roadmap adds trustworthy spreadsheet import without changing the blind-review boundary.
+The browser-only demo supports a complete synthetic workflow while keeping imported material and saved state on the researcher’s device.
 
 1. Open a clearly labelled fictional home sleep-monitoring project.
 2. Inspect or locally import a CSV/Excel codebook and human first-pass coding.
@@ -39,8 +39,9 @@ The browser-only demo supports a complete synthetic workflow. The default branch
 7. Record one of nine human resolution decisions with a required rationale.
 8. Inspect the decision log and reviewer provenance.
 9. Export a reviewed coding table as CSV or a fuller audit bundle as JSON.
+10. Save a versioned QualiAudit project file and restore the same review in another browser session.
 
-State is saved in browser `localStorage`. No account, API key, server, or third-party model is used by the sample.
+Working state is saved in browser `localStorage`. A resumable `.qualiaudit.json` project file can be downloaded explicitly; it contains the full review state, including human judgments and decision history. No account, API key, server, or third-party model is used by the sample.
 
 ## Method-aware behaviour
 
@@ -103,7 +104,7 @@ npm run check:release
 npm run check
 ```
 
-The test suite covers validation, blind payload construction, deterministic review structure, method-aware queue labels, comparison categories, spreadsheet mapping, the downloadable workbook fixture, and CSV/JSON audit data.
+The test suite covers validation, blind payload construction, deterministic review structure, method-aware queue labels, comparison categories, spreadsheet mapping, the downloadable workbook fixture, versioned project-file recovery, and CSV/JSON audit data.
 
 ## Data and templates
 
@@ -118,6 +119,8 @@ CSV and Excel (`.xlsx`) upload are implemented for codebooks and human-coded exc
 
 Direct export profiles for qualitative research tools remain roadmap items. QualiAudit does not parse proprietary project files.
 
+The **Save project** action creates a resumable, versioned QualiAudit JSON file. This is different from **Export audit JSON**, which is a reporting record and cannot be reopened as a working project. Restoring a project first shows its name, method, stage, material counts, and export date before replacing browser state.
+
 ## Technology choices
 
 - **React + TypeScript** keep the stateful review flow explicit and typed while remaining familiar to open-source contributors.
@@ -125,7 +128,7 @@ Direct export profiles for qualitative research tools remain roadmap items. Qual
 - **Plain CSS** keeps the visual system inspectable and avoids locking an early research product into a component framework.
 - **Vitest + Testing Library** support fast unit and interaction-oriented testing in the same TypeScript toolchain.
 - **read-excel-file** provides a narrowly scoped, browser-compatible `.xlsx` parser without introducing a server or exposing imported files to a third party.
-- **Local-first browser state** is appropriate for a synthetic no-login demo and makes the data boundary easy to inspect. It is not presented as secure storage for sensitive studies.
+- **Local-first browser state and versioned project files** make the no-login workflow inspectable and portable without a cloud database. Neither is presented as encrypted storage for sensitive studies.
 
 The dependency lockfile is committed; use `npm ci` for reproducible installation.
 
@@ -144,6 +147,7 @@ v0.1 does not:
 
 - The deterministic reviewer uses transparent keyword-oriented rules. Its readings demonstrate the review workflow, not model quality.
 - Browser `localStorage` is not suitable for sensitive or regulated research data. Use only fictional or appropriately governed material in v0.1.
+- QualiAudit project files are plain JSON backups, not encrypted containers. They may include excerpts, context, human codes, second-coder judgments, rationales, AI reviews, and decisions; protect them like the underlying research dataset.
 - CSV parsing covers common quoted CSV but does not yet perform complete dialect detection. Excel import is intentionally limited to `.xlsx`, 10 MB, and 5,000 rows per selected sheet; formulas are imported as their stored values and encrypted workbooks are unsupported.
 - Human decisions after AI exposure may be influenced by automation bias even when the review is blind. QualiAudit records changes; it cannot remove that influence.
 - Descriptive human–AI overlap is not intercoder reliability, methodological validation, or evidence of correctness.
