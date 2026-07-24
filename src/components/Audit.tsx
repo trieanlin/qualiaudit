@@ -38,7 +38,7 @@ export function Audit({ project, codebook, excerpts, frozen, reviews, resolution
         <div>
           <div className="heading-badges"><span className="overline">AUDIT SUMMARY</span><ModeBadge mode={project.analysisMode} /></div>
           <h1>Trace the interpretation, not just the output.</h1>
-          <p>A portable record of what was reviewed, what changed, and where the human decision remained.</p>
+          <p>An auditable record of what was reviewed, what changed, and where the human decision remained.</p>
         </div>
         <div className="export-group">
           <button className="button secondary" type="button" onClick={() => downloadText('qualiaudit-reviewed-coding.csv', reviewedRowsCsv(rows), 'text/csv;charset=utf-8')}><Download size={16} /> CSV</button>
