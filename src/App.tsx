@@ -1,8 +1,9 @@
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { Audit } from './components/Audit'
 import { CaseResolution } from './components/CaseResolution'
 import { FreezeReview, Reviewing } from './components/FreezeReview'
 import { Landing } from './components/Landing'
+import { LocalDataDialog } from './components/LocalDataDialog'
 import { Materials } from './components/Materials'
 import { ReviewQueue } from './components/ReviewQueue'
 import { Setup } from './components/Setup'
@@ -23,6 +24,7 @@ function cloneSample() {
 
 export default function App() {
   const { state, setState, patchState, reset } = useReviewState()
+  const [showLocalData, setShowLocalData] = useState(false)
 
   const openSample = () => {
     const sample = cloneSample()
@@ -77,8 +79,27 @@ export default function App() {
 
   const navigate = (view: typeof state.view) => patchState({ view, selectedExcerptId: null })
 
+  const localDataDialog = showLocalData ? (
+    <LocalDataDialog
+      state={state}
+      onClose={() => setShowLocalData(false)}
+      onSaveProject={saveProjectFile}
+      onClear={reset}
+    />
+  ) : null
+
   if (state.view === 'landing' || !state.project) {
-    return <Landing onOpenSample={openSample} onNewReview={startSetup} onRestoreProject={setState} />
+    return (
+      <>
+        <Landing
+          onOpenSample={openSample}
+          onNewReview={startSetup}
+          onRestoreProject={setState}
+          onManageData={() => setShowLocalData(true)}
+        />
+        {localDataDialog}
+      </>
+    )
   }
 
   const activeProject = state.frozen?.project ?? state.project
@@ -89,15 +110,17 @@ export default function App() {
   const selectedResolution = state.resolutions.find((item) => item.excerpt_id === state.selectedExcerptId)
 
   return (
-    <Shell
-      view={state.view}
-      project={activeProject}
-      canReview={state.reviews.length > 0}
-      canAudit={Boolean(state.frozen && state.reviews.length)}
-      onNavigate={navigate}
-      onReset={handleReset}
-      onSaveProject={saveProjectFile}
-    >
+    <>
+      <Shell
+        view={state.view}
+        project={activeProject}
+        canReview={state.reviews.length > 0}
+        canAudit={Boolean(state.frozen && state.reviews.length)}
+        onNavigate={navigate}
+        onReset={handleReset}
+        onSaveProject={saveProjectFile}
+        onManageData={() => setShowLocalData(true)}
+      >
       {state.view === 'setup' && (
         <Setup
           project={activeProject}
@@ -167,6 +190,8 @@ export default function App() {
           onOpenCase={openCase}
         />
       )}
-    </Shell>
+      </Shell>
+      {localDataDialog}
+    </>
   )
 }

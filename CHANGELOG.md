@@ -14,6 +14,9 @@ All notable changes to QualiAudit are documented here. The project follows [Sema
 - A restore preview showing project identity, method, progress, counts, and export date before state replacement.
 - Strict project-file validation, safe rejection of malformed/future-version files, and recovery tests for frozen reviews and decision logs.
 - Clear separation between resumable project files and non-resumable audit JSON exports.
+- A Data & privacy dialog that reports locally retained review counts and approximate size.
+- Confirmed deletion of QualiAudit’s browser record without clearing unrelated local-storage keys.
+- Public encryption-at-rest feasibility guidance and explicit downloaded-file deletion boundaries.
 
 ## [0.1.0] - 2026-07-22
 

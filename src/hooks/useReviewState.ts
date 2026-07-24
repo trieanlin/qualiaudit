@@ -9,7 +9,7 @@ import type {
   Resolution,
 } from '../types'
 
-const STORAGE_KEY = 'qualiaudit-review-state-v0.1'
+export const STORAGE_KEY = 'qualiaudit-review-state-v0.1'
 
 export interface ReviewState {
   view: AppView
@@ -46,14 +46,21 @@ export function useReviewState() {
   const [state, setState] = useState<ReviewState>(readStoredState)
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+    if (state.project) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+    } else {
+      localStorage.removeItem(STORAGE_KEY)
+    }
   }, [state])
 
   const patchState = useCallback((patch: Partial<ReviewState>) => {
     setState((current) => ({ ...current, ...patch }))
   }, [])
 
-  const reset = useCallback(() => setState(INITIAL_STATE), [])
+  const reset = useCallback(() => {
+    localStorage.removeItem(STORAGE_KEY)
+    setState(INITIAL_STATE)
+  }, [])
 
   return { state, setState, patchState, reset }
 }

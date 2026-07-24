@@ -1,4 +1,4 @@
-import { BookOpen, Check, ClipboardCheck, FileDown, FileSearch, FlaskConical, RotateCcw } from 'lucide-react'
+import { BookOpen, Check, ClipboardCheck, FileDown, FileSearch, FlaskConical, RotateCcw, ShieldCheck } from 'lucide-react'
 import type { AnalysisMode, AppView, ProjectBrief } from '../types'
 
 interface ShellProps {
@@ -10,6 +10,7 @@ interface ShellProps {
   onNavigate: (view: AppView) => void
   onReset: () => void
   onSaveProject: () => void
+  onManageData: () => void
 }
 
 const stages: { key: AppView; label: string; eyebrow: string; icon: typeof BookOpen }[] = [
@@ -21,7 +22,17 @@ const stages: { key: AppView; label: string; eyebrow: string; icon: typeof BookO
 
 const viewOrder: AppView[] = ['landing', 'setup', 'materials', 'freeze', 'reviewing', 'queue', 'case', 'audit']
 
-export function AppHeader({ onReset, inProject, onSaveProject }: { onReset: () => void; inProject: boolean; onSaveProject?: () => void }) {
+export function AppHeader({
+  onReset,
+  inProject,
+  onSaveProject,
+  onManageData,
+}: {
+  onReset: () => void
+  inProject: boolean
+  onSaveProject?: () => void
+  onManageData: () => void
+}) {
   return (
     <header className="app-header">
       <button className="brand" type="button" onClick={inProject ? onReset : undefined} aria-label="QualiAudit home">
@@ -33,6 +44,10 @@ export function AppHeader({ onReset, inProject, onSaveProject }: { onReset: () =
       </button>
       <div className="header-actions">
         <span className="local-chip"><span className="status-dot" /> Local browser session</span>
+        <button className="icon-button" type="button" onClick={onManageData} title="Review local data and privacy">
+          <ShieldCheck size={16} aria-hidden="true" />
+          <span>Data &amp; privacy</span>
+        </button>
         {inProject && (
           <>
             <button className="icon-button" type="button" onClick={onSaveProject} title="Save a resumable local project file">
@@ -50,7 +65,7 @@ export function AppHeader({ onReset, inProject, onSaveProject }: { onReset: () =
   )
 }
 
-export function Shell({ view, project, children, canReview, canAudit, onNavigate, onReset, onSaveProject }: ShellProps) {
+export function Shell({ view, project, children, canReview, canAudit, onNavigate, onReset, onSaveProject, onManageData }: ShellProps) {
   const activeKey = view === 'freeze' ? 'materials' : view === 'reviewing' || view === 'case' ? 'queue' : view
   const currentIndex = viewOrder.indexOf(view)
   const enabled = (key: AppView) => {
@@ -62,7 +77,7 @@ export function Shell({ view, project, children, canReview, canAudit, onNavigate
 
   return (
     <div className="app-frame">
-      <AppHeader onReset={onReset} inProject onSaveProject={onSaveProject} />
+      <AppHeader onReset={onReset} inProject onSaveProject={onSaveProject} onManageData={onManageData} />
       <div className="workspace-layout">
         <aside className="project-sidebar" aria-label="Review progress">
           <div className="project-context">
