@@ -1,10 +1,7 @@
 import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 
-const expectedIdentity = {
-  name: 'QualiAudit Contributors',
-  email: 'qualiaudit@users.noreply.github.com',
-}
+const githubNoreplyEmail = /^(?:\d+\+)?[A-Za-z0-9-]+@users\.noreply\.github\.com$/i
 
 const contentRules = [
   ['OpenAI-style API key', /\bsk-(?:proj-)?[A-Za-z0-9_-]{16,}\b/g],
@@ -50,12 +47,12 @@ const metadata = execFileSync('git', ['log', 'HEAD', '--format=%an%x09%ae%x09%cn
 
 for (const [authorName, authorEmail, committerName, committerEmail] of metadata.trim().split('\n').map((line) => line.split('\t'))) {
   if (
-    authorName !== expectedIdentity.name
-    || authorEmail !== expectedIdentity.email
-    || committerName !== expectedIdentity.name
-    || committerEmail !== expectedIdentity.email
+    !authorName?.trim()
+    || !committerName?.trim()
+    || !githubNoreplyEmail.test(authorEmail)
+    || !githubNoreplyEmail.test(committerEmail)
   ) {
-    issues.push('Git commit metadata: non-sanitised author or committer identity')
+    issues.push('Git commit metadata: author and committer must use a GitHub noreply email')
     break
   }
 }

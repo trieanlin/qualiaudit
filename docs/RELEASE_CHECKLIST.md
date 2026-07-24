@@ -13,7 +13,7 @@ The release check reports rule names and affected scopes without printing a susp
 
 ## Identity and local-machine information
 
-- [ ] `git log --format=fuller` uses the project identity `QualiAudit Contributors <qualiaudit@users.noreply.github.com>`.
+- [ ] `git log --format=fuller` uses a GitHub-provided `@users.noreply.github.com` address for authors and committers.
 - [ ] No tracked file contains a macOS or Windows user home-directory path, a computer hostname, or a private email.
 - [ ] Screenshot metadata and visible UI contain no account name, browser profile, notifications, or local path.
 - [ ] GitHub account email privacy is enabled before making future commits.
@@ -21,8 +21,8 @@ The release check reports rule names and affected scopes without printing a susp
 Recommended repository-local identity:
 
 ```bash
-git config user.name "QualiAudit Contributors"
-git config user.email "qualiaudit@users.noreply.github.com"
+git config user.name "<your-public-github-name>"
+git config user.email "<your-github-noreply-address>"
 ```
 
 ## API keys and credentials
