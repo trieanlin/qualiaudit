@@ -6,6 +6,12 @@ QualiAudit helps qualitative researchers independently review coded excerpts, ex
 
 It is closer to a pull request for qualitative analysis than an automated coding product: a researcher commits a first-pass interpretation, a reviewer produces a blind independent reading, and the researcher resolves or intentionally preserves the differences.
 
+## Live demo
+
+[Open the QualiAudit synthetic demo](https://qualiaudit-beta.vercel.app)
+
+The demo uses fictional data, runs entirely in the browser, and does not require an account or API key.
+
 ![QualiAudit review queue](docs/screenshots/review-queue.jpg)
 
 ## Why this project exists
