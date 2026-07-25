@@ -8,15 +8,16 @@ interface LandingProps {
   onOpenSample: () => void
   onNewReview: () => void
   onRestoreProject: (state: ReviewState) => void
+  onManageData: () => void
 }
 
-export function Landing({ onOpenSample, onNewReview, onRestoreProject }: LandingProps) {
+export function Landing({ onOpenSample, onNewReview, onRestoreProject, onManageData }: LandingProps) {
   const [projectFile, setProjectFile] = useState<File | null>(null)
   const projectInput = useRef<HTMLInputElement>(null)
 
   return (
     <div className="landing-page">
-      <AppHeader onReset={() => undefined} inProject={false} />
+      <AppHeader onReset={() => undefined} inProject={false} onManageData={onManageData} />
       <main id="main-content">
         <section className="hero section-wrap">
           <div className="hero-copy">

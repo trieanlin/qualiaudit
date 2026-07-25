@@ -51,3 +51,10 @@ These are the first scoped issues to create when the repository receives a GitHu
 **Phase:** Cross-cutting quality  
 **Outcome:** The sample flow meets WCAG 2.2 AA expectations for keyboard, focus, semantics, contrast, zoom, and reduced motion.  
 **Acceptance:** Automated checks are supplemented by keyboard and screen-reader testing; issues are tracked per screen; no status relies on colour alone.
+
+## QA-09 — Make local review retention inspectable and deletable
+
+**Phase:** Trustworthy import
+**Status:** Complete
+**Outcome:** A researcher can see what QualiAudit retains in the browser and remove the working record without affecting unrelated browser data.
+**Acceptance:** The summary avoids displaying excerpt text; deletion requires confirmation; QualiAudit removes only its versioned key; downloaded-file boundaries and the absence of application-level encryption are explicit and tested.

@@ -12,9 +12,13 @@ Until a dedicated private reporting channel is configured, do not post participa
 
 The bundled demo uses fictional data and sends no excerpts to a model provider or application backend. CSV, Excel, and QualiAudit project files are parsed in the browser; imported content is not uploaded by QualiAudit. Project state is stored in browser `localStorage`. This is convenient, not secure research-data storage: other users or software with access to the same browser profile may be able to read it.
 
+The in-app **Data & privacy** control reports whether QualiAudit has a saved review and can delete its browser-storage key after confirmation. It does not call `localStorage.clear()` and therefore does not deliberately remove unrelated site records. It also cannot remove downloaded files, device or browser backups, synced copies, screenshots, or exports stored elsewhere. Those copies must be governed and deleted separately.
+
 Downloaded `.qualiaudit.json` files are plain-text, resumable backups rather than encrypted archives. They can contain the complete research record: source excerpts and context, human and second-coder judgments, rationales and confidence, frozen snapshots, AI reviews, and resolution history. Store, transfer, retain, and delete them under the same governance controls as the source research data. The restore flow validates structure and shows a summary, but it does not establish that the file is trustworthy or free of sensitive content.
 
 Do not use v0.1 with sensitive, identifiable, embargoed, or regulated research material. A future real-model adapter must complete a threat model, explicit transmission consent flow, provider disclosure, secret-management review, and institutional governance guidance before being described as suitable for real research data.
+
+Application-level encryption is not implemented. The options, risks, v0.1 decision, and prerequisites for a future encrypted format are documented in [Browser encryption feasibility](docs/ENCRYPTION_FEASIBILITY.md).
 
 ## API keys and environment variables
 

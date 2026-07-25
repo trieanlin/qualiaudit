@@ -40,8 +40,9 @@ The browser-only demo supports a complete synthetic workflow while keeping impor
 8. Inspect the decision log and reviewer provenance.
 9. Export a reviewed coding table as CSV or a fuller audit bundle as JSON.
 10. Save a versioned QualiAudit project file and restore the same review in another browser session.
+11. Inspect the locally retained record and explicitly delete it from the browser.
 
-Working state is saved in browser `localStorage`. A resumable `.qualiaudit.json` project file can be downloaded explicitly; it contains the full review state, including human judgments and decision history. No account, API key, server, or third-party model is used by the sample.
+Working state is saved in browser `localStorage`. **Data & privacy** shows the saved project, stage, record counts, and approximate size; deletion removes QualiAudit’s own browser record after confirmation without clearing unrelated site data. A resumable `.qualiaudit.json` project file can be downloaded explicitly; it contains the full review state, including human judgments and decision history. No account, API key, server, or third-party model is used by the sample.
 
 ## Method-aware behaviour
 
@@ -104,7 +105,7 @@ npm run check:release
 npm run check
 ```
 
-The test suite covers validation, blind payload construction, deterministic review structure, method-aware queue labels, comparison categories, spreadsheet mapping, the downloadable workbook fixture, versioned project-file recovery, and CSV/JSON audit data.
+The test suite covers validation, blind payload construction, deterministic review structure, method-aware queue labels, comparison categories, spreadsheet mapping, the downloadable workbook fixture, versioned project-file recovery, explicit browser-record deletion, and CSV/JSON audit data.
 
 ## Data and templates
 
@@ -120,6 +121,8 @@ CSV and Excel (`.xlsx`) upload are implemented for codebooks and human-coded exc
 Direct export profiles for qualitative research tools remain roadmap items. QualiAudit does not parse proprietary project files.
 
 The **Save project** action creates a resumable, versioned QualiAudit JSON file. This is different from **Export audit JSON**, which is a reporting record and cannot be reopened as a working project. Restoring a project first shows its name, method, stage, material counts, and export date before replacing browser state.
+
+The **Data & privacy** action makes automatic browser retention visible and offers a confirmed **Delete local review** control. Browser deletion does not delete `.qualiaudit.json`, CSV, JSON, or other files already downloaded to the device.
 
 ## Technology choices
 
@@ -147,6 +150,7 @@ v0.1 does not:
 
 - The deterministic reviewer uses transparent keyword-oriented rules. Its readings demonstrate the review workflow, not model quality.
 - Browser `localStorage` is not suitable for sensitive or regulated research data. Use only fictional or appropriately governed material in v0.1.
+- Browser deletion removes QualiAudit’s saved working record, not downloaded files, browser backups, or copies made elsewhere.
 - QualiAudit project files are plain JSON backups, not encrypted containers. They may include excerpts, context, human codes, second-coder judgments, rationales, AI reviews, and decisions; protect them like the underlying research dataset.
 - CSV parsing covers common quoted CSV but does not yet perform complete dialect detection. Excel import is intentionally limited to `.xlsx`, 10 MB, and 5,000 rows per selected sheet; formulas are imported as their stored values and encrypted workbooks are unsupported.
 - Human decisions after AI exposure may be influenced by automation bias even when the review is blind. QualiAudit records changes; it cannot remove that influence.
@@ -160,6 +164,7 @@ v0.1 does not:
 - [Contributing](CONTRIBUTING.md)
 - [Security and research-data guidance](SECURITY.md)
 - [Architecture note](docs/ARCHITECTURE.md)
+- [Browser encryption feasibility](docs/ENCRYPTION_FEASIBILITY.md)
 - [Issue-ready backlog](docs/ISSUE_BACKLOG.md)
 - [Release privacy and secret checklist](docs/RELEASE_CHECKLIST.md)
 

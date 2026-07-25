@@ -16,7 +16,7 @@ This roadmap treats product, methodological, governance, and engineering work as
 - [x] Excel (`.xlsx`) import with sheet/header/column mapping.
 - [ ] Import profiles for common NVivo/MAXQDA/ATLAS.ti tabular exports, without parsing proprietary project files.
 - [x] In-browser project file export/import so reviews can move between devices without a cloud account.
-- [ ] Clear local-data deletion and encrypted-at-rest feasibility study.
+- [x] Clear local-data deletion and encrypted-at-rest feasibility study.
 - [ ] Larger validation corpus covering CSV dialects, Unicode, multi-code cells, and segment boundaries.
 
 ## Phase 2 — optional real reviewer adapter
