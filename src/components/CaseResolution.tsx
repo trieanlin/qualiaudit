@@ -4,6 +4,7 @@ import { categoryLabel, classifyCase } from '../lib/queue'
 import { decisionLabels } from '../lib/resolutions'
 import type {
   AiReview,
+  CodebookChange,
   CodeDefinition,
   HumanCodedExcerpt,
   ProjectBrief,
@@ -15,10 +16,12 @@ interface CaseResolutionProps {
   project: ProjectBrief
   codebook: CodeDefinition[]
   human: HumanCodedExcerpt
+  excerpts: HumanCodedExcerpt[]
   ai: AiReview
   existing?: Resolution
+  existingCodebookChange?: CodebookChange
   onBack: () => void
-  onSave: (resolution: Resolution) => void
+  onSave: (resolution: Resolution, codebookChange?: CodebookChange) => void
 }
 
 const CHANGED_DECISIONS = new Set<ResolutionDecision>(['accept_ai', 'keep_both', 'revise_code', 'revise_boundary', 'revise_codebook'])
@@ -35,16 +38,65 @@ const decisionDescriptions: Record<ResolutionDecision, string> = {
   reject_ai: 'The suggested reading is not adequately supported by the excerpt.',
 }
 
-export function CaseResolution({ project, codebook, human, ai, existing, onBack, onSave }: CaseResolutionProps) {
+function defaultAffectedIds(
+  code: string,
+  excerpts: HumanCodedExcerpt[],
+  triggerExcerptId: string,
+): string[] {
+  return [...new Set([
+    triggerExcerptId,
+    ...excerpts.filter((excerpt) => excerpt.human_code === code).map((excerpt) => excerpt.excerpt_id),
+  ])]
+}
+
+export function CaseResolution({
+  project,
+  codebook,
+  human,
+  excerpts,
+  ai,
+  existing,
+  existingCodebookChange,
+  onBack,
+  onSave,
+}: CaseResolutionProps) {
+  const initialChangeCode = existingCodebookChange?.code ?? human.human_code
+  const initialCodeDefinition = codebook.find((item) => item.code === initialChangeCode) ?? codebook[0]
   const [decision, setDecision] = useState<ResolutionDecision | null>(existing?.decision ?? null)
   const [rationale, setRationale] = useState(existing?.rationale ?? '')
   const [finalCode, setFinalCode] = useState(existing?.final_code ?? human.human_code)
+  const [changeCode, setChangeCode] = useState(initialCodeDefinition?.code ?? '')
+  const [changeAuthor, setChangeAuthor] = useState(existingCodebookChange?.author ?? 'Researcher')
+  const [changeDefinition, setChangeDefinition] = useState(existingCodebookChange?.after.definition ?? initialCodeDefinition?.definition ?? '')
+  const [changeIncludeWhen, setChangeIncludeWhen] = useState(existingCodebookChange?.after.include_when ?? initialCodeDefinition?.include_when ?? '')
+  const [changeExcludeWhen, setChangeExcludeWhen] = useState(existingCodebookChange?.after.exclude_when ?? initialCodeDefinition?.exclude_when ?? '')
+  const [changeExample, setChangeExample] = useState(existingCodebookChange?.after.example ?? initialCodeDefinition?.example ?? '')
+  const [affectedExcerptIds, setAffectedExcerptIds] = useState<string[]>(
+    existingCodebookChange?.affected_excerpt_ids
+      ?? defaultAffectedIds(initialCodeDefinition?.code ?? '', excerpts, human.excerpt_id),
+  )
   const [showError, setShowError] = useState(false)
   const category = classifyCase(human, ai, codebook)
   const relevantCodes = useMemo(() => {
     const wanted = new Set([human.human_code, ai.primary_suggested_code, ai.alternative_code].filter(Boolean))
     return codebook.filter((item) => wanted.has(item.code))
   }, [ai, codebook, human.human_code])
+  const selectedChangeCode = codebook.find((item) => item.code === changeCode)
+  const codebookDraftChanged = Boolean(selectedChangeCode) && (
+    changeDefinition.trim() !== selectedChangeCode?.definition
+    || changeIncludeWhen.trim() !== selectedChangeCode?.include_when
+    || changeExcludeWhen.trim() !== selectedChangeCode?.exclude_when
+    || changeExample.trim() !== (selectedChangeCode?.example ?? '')
+  )
+  const codebookChangeInvalid = decision === 'revise_codebook' && (
+    !selectedChangeCode
+    || changeAuthor.trim().length < 2
+    || changeDefinition.trim().length === 0
+    || changeIncludeWhen.trim().length === 0
+    || changeExcludeWhen.trim().length === 0
+    || !codebookDraftChanged
+    || affectedExcerptIds.length === 0
+  )
 
   const chooseDecision = (next: ResolutionDecision) => {
     setDecision(next)
@@ -53,19 +105,61 @@ export function CaseResolution({ project, codebook, human, ai, existing, onBack,
     else if (next !== 'revise_code') setFinalCode(human.human_code)
   }
 
+  const chooseChangeCode = (nextCode: string) => {
+    const next = codebook.find((item) => item.code === nextCode)
+    if (!next) return
+    setChangeCode(next.code)
+    setChangeDefinition(next.definition)
+    setChangeIncludeWhen(next.include_when)
+    setChangeExcludeWhen(next.exclude_when)
+    setChangeExample(next.example ?? '')
+    setAffectedExcerptIds(defaultAffectedIds(next.code, excerpts, human.excerpt_id))
+  }
+
+  const toggleAffectedExcerpt = (excerptId: string) => {
+    setAffectedExcerptIds((current) => (
+      current.includes(excerptId)
+        ? current.filter((item) => item !== excerptId)
+        : [...current, excerptId]
+    ))
+  }
+
   const save = () => {
-    if (!decision || rationale.trim().length < 8) {
+    if (!decision || rationale.trim().length < 8 || codebookChangeInvalid) {
       setShowError(true)
       return
     }
+    const decidedAt = new Date().toISOString()
+    const codebookChange = decision === 'revise_codebook' && selectedChangeCode
+      ? {
+          ledger_version: 'qualiaudit-codebook-change-v0.1' as const,
+          id: crypto.randomUUID(),
+          trigger_excerpt_id: human.excerpt_id,
+          code: selectedChangeCode.code,
+          before: { ...selectedChangeCode },
+          after: {
+            code: selectedChangeCode.code,
+            definition: changeDefinition.trim(),
+            include_when: changeIncludeWhen.trim(),
+            exclude_when: changeExcludeWhen.trim(),
+            ...(changeExample.trim() ? { example: changeExample.trim() } : {}),
+          },
+          author: changeAuthor.trim(),
+          rationale: rationale.trim(),
+          created_at: decidedAt,
+          affected_excerpt_ids: [...affectedExcerptIds],
+          unresolved_recode_excerpt_ids: [...affectedExcerptIds],
+        }
+      : undefined
     onSave({
       excerpt_id: human.excerpt_id,
       decision,
       rationale: rationale.trim(),
       final_code: finalCode,
-      decided_at: new Date().toISOString(),
+      codebook_change_id: codebookChange?.id,
+      decided_at: decidedAt,
       changed_after_ai_exposure: CHANGED_DECISIONS.has(decision),
-    })
+    }, codebookChange)
   }
 
   return (
@@ -130,12 +224,77 @@ export function CaseResolution({ project, codebook, human, ai, existing, onBack,
           <label className="field final-code-field"><span>Revised code</span><select value={finalCode} onChange={(event) => setFinalCode(event.target.value)}>{codebook.map((code) => <option key={code.code}>{code.code}</option>)}</select></label>
         )}
 
+        {decision === 'revise_codebook' && selectedChangeCode && (
+          <section className="codebook-change-editor" aria-labelledby="codebook-change-heading">
+            <div className="codebook-change-heading">
+              <div>
+                <span className="overline">CODEBOOK CHANGE LEDGER</span>
+                <h3 id="codebook-change-heading">Describe a proposed revision without changing the frozen codebook.</h3>
+              </div>
+              <span>Version 0.1</span>
+            </div>
+
+            <div className="codebook-change-meta">
+              <label className="field">
+                <span>Code to revise <b>Required</b></span>
+                <select value={changeCode} onChange={(event) => chooseChangeCode(event.target.value)}>
+                  {codebook.map((code) => <option key={code.code} value={code.code}>{code.code}</option>)}
+                </select>
+              </label>
+              <label className="field">
+                <span>Change author <b>Required</b></span>
+                <input value={changeAuthor} onChange={(event) => setChangeAuthor(event.target.value)} />
+                <small>Stored locally and included in project/audit exports.</small>
+              </label>
+            </div>
+
+            <div className="codebook-before-after">
+              <article>
+                <span className="overline">FROZEN BEFORE</span>
+                <dl>
+                  <div><dt>Definition</dt><dd>{selectedChangeCode.definition}</dd></div>
+                  <div><dt>Include when</dt><dd>{selectedChangeCode.include_when}</dd></div>
+                  <div><dt>Exclude when</dt><dd>{selectedChangeCode.exclude_when}</dd></div>
+                  {selectedChangeCode.example && <div><dt>Example</dt><dd>{selectedChangeCode.example}</dd></div>}
+                </dl>
+              </article>
+              <fieldset>
+                <legend>Proposed after</legend>
+                <label className="field"><span>Definition <b>Required</b></span><textarea rows={3} value={changeDefinition} onChange={(event) => setChangeDefinition(event.target.value)} /></label>
+                <label className="field"><span>Include when <b>Required</b></span><textarea rows={3} value={changeIncludeWhen} onChange={(event) => setChangeIncludeWhen(event.target.value)} /></label>
+                <label className="field"><span>Exclude when <b>Required</b></span><textarea rows={3} value={changeExcludeWhen} onChange={(event) => setChangeExcludeWhen(event.target.value)} /></label>
+                <label className="field"><span>Example <i>Optional</i></span><textarea rows={2} value={changeExample} onChange={(event) => setChangeExample(event.target.value)} /></label>
+              </fieldset>
+            </div>
+
+            <fieldset className="affected-excerpts">
+              <legend>Affected excerpts <b>Required</b></legend>
+              <p>Selected excerpts enter unresolved recoding work; their frozen codes are not changed.</p>
+              <div>
+                {excerpts.map((excerpt) => (
+                  <label key={excerpt.excerpt_id}>
+                    <input
+                      type="checkbox"
+                      checked={affectedExcerptIds.includes(excerpt.excerpt_id)}
+                      onChange={() => toggleAffectedExcerpt(excerpt.excerpt_id)}
+                    />
+                    <span><strong>{excerpt.excerpt_id}</strong><small>{excerpt.human_code} · {excerpt.excerpt}</small></span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          </section>
+        )}
+
         <label className="field rationale-field">
           <span>Short rationale <b>Required</b></span>
           <textarea rows={4} value={rationale} onChange={(event) => setRationale(event.target.value)} placeholder="What evidence or analytic consideration led to this decision?" />
           <small>{rationale.length} characters · describe your reasoning, not whether the AI was “right”</small>
         </label>
         {showError && (!decision || rationale.trim().length < 8) && <p className="form-error"><CircleAlert size={15} /> Choose a decision and add a short rationale of at least 8 characters.</p>}
+        {showError && codebookChangeInvalid && (
+          <p className="form-error"><CircleAlert size={15} /> Complete the author, proposed definition guidance, at least one real change, and one affected excerpt.</p>
+        )}
         <div className="resolution-footer">
           <span>{existing ? 'Saving will add a new timestamp to this decision.' : 'This action records your post-exposure decision.'}</span>
           <button className="button primary" type="button" onClick={save}>Save decision <ArrowRight size={17} /></button>

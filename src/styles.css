@@ -496,6 +496,32 @@ a { color: inherit; }
 .decision-grid strong, .decision-grid small { display: block; }
 .decision-grid strong { font-size: 10px; line-height: 1.3; }
 .decision-grid small { color: var(--ink-soft); font-size: 8px; line-height: 1.35; margin-top: 5px; }
+.codebook-change-editor { margin-top: 22px; padding: 22px; border: 1px solid #d4d9cf; border-radius: 9px; background: #f5f6f1; }
+.codebook-change-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; margin-bottom: 18px; }
+.codebook-change-heading h3 { max-width: 700px; margin: 5px 0 0; font-family: var(--serif); font-size: 22px; font-weight: 500; line-height: 1.25; }
+.codebook-change-heading > span { flex: 0 0 auto; padding: 4px 7px; color: #63766b; background: #e3ebe3; border-radius: 100px; font-size: 8px; font-weight: 750; }
+.codebook-change-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.codebook-change-meta .field { margin-bottom: 14px; }
+.codebook-before-after { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.codebook-before-after > article, .codebook-before-after > fieldset { min-width: 0; margin: 0; padding: 18px; border: 1px solid var(--line); border-radius: 8px; background: var(--white); }
+.codebook-before-after > fieldset legend { padding: 0 6px; color: #6f7d7e; font-size: 9px; font-weight: 750; letter-spacing: .12em; text-transform: uppercase; }
+.codebook-before-after dl { margin: 15px 0 0; }
+.codebook-before-after dl div + div { margin-top: 13px; }
+.codebook-before-after dt { color: #788384; font-size: 8px; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }
+.codebook-before-after dd { margin: 4px 0 0; color: var(--ink-soft); font-family: var(--serif); font-size: 13px; line-height: 1.45; }
+.codebook-before-after .field { margin-bottom: 12px; }
+.codebook-before-after .field:last-child { margin-bottom: 0; }
+.codebook-before-after .field i { color: var(--ink-soft); font-size: 9px; font-style: normal; font-weight: 500; }
+.affected-excerpts { margin: 15px 0 0; padding: 17px; border: 1px solid var(--line); border-radius: 8px; background: var(--white); }
+.affected-excerpts legend { padding: 0 6px; font-size: 11px; font-weight: 750; }
+.affected-excerpts legend b { color: var(--clay); font-size: 8px; text-transform: uppercase; }
+.affected-excerpts > p { margin: 0 0 11px; color: var(--ink-soft); font-size: 9px; }
+.affected-excerpts > div { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.affected-excerpts label { min-width: 0; padding: 9px 10px; display: flex; align-items: flex-start; gap: 9px; border: 1px solid var(--line); border-radius: 6px; cursor: pointer; }
+.affected-excerpts input { margin-top: 2px; accent-color: var(--sage); }
+.affected-excerpts span, .affected-excerpts strong, .affected-excerpts small { min-width: 0; display: block; }
+.affected-excerpts strong { font-size: 9px; }
+.affected-excerpts small { margin-top: 3px; color: var(--ink-soft); font-size: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .final-code-field, .rationale-field { margin-top: 20px; margin-bottom: 0; }
 .rationale-field > span { display: flex; justify-content: space-between; }
 .rationale-field > span b { color: var(--clay); font-size: 8px; text-transform: uppercase; letter-spacing: .08em; }
@@ -514,6 +540,24 @@ a { color: inherit; }
 .audit-metrics small { color: var(--ink-soft); font-size: 8px; margin-top: 2px; }
 .audit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
 .audit-card { border: 1px solid var(--line); background: var(--white); border-radius: 9px; padding: 23px; }
+.codebook-ledger-section { margin-top: 34px; }
+.codebook-ledger { display: grid; gap: 12px; }
+.codebook-ledger > article { padding: 23px; border: 1px solid var(--line); border-radius: 9px; background: var(--white); }
+.ledger-topline { display: flex; align-items: center; justify-content: space-between; gap: 15px; }
+.ledger-topline > span:last-child { color: var(--ink-soft); font-size: 9px; }
+.codebook-ledger h3 { margin: 13px 0 6px; font-family: var(--serif); font-size: 21px; font-weight: 500; }
+.ledger-rationale { margin: 0; color: var(--ink-soft); font-size: 11px; line-height: 1.5; }
+.ledger-comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; margin-top: 17px; overflow: hidden; border: 1px solid var(--line); border-radius: 7px; background: var(--line); }
+.ledger-comparison section { padding: 17px; background: #fbfaf6; }
+.ledger-comparison section:last-child { background: #f1f5f0; }
+.ledger-comparison p { margin: 10px 0 13px; font-family: var(--serif); font-size: 14px; line-height: 1.45; }
+.ledger-comparison dl { margin: 0; }
+.ledger-comparison dt { color: #788384; font-size: 8px; font-weight: 750; text-transform: uppercase; }
+.ledger-comparison dd { margin: 3px 0 10px; color: var(--ink-soft); font-size: 9px; line-height: 1.45; }
+.ledger-work { margin-top: 15px; display: grid; grid-template-columns: 1fr 1fr auto; align-items: end; gap: 14px; }
+.ledger-work strong, .ledger-work span { display: block; }
+.ledger-work strong { color: #788384; font-size: 8px; text-transform: uppercase; }
+.ledger-work span { margin-top: 4px; font-size: 10px; line-height: 1.45; }
 .card-heading { display: flex; gap: 11px; align-items: center; border-bottom: 1px solid var(--line); padding-bottom: 14px; }
 .card-heading > svg { color: var(--clay); }
 .card-heading h2 { font-family: var(--serif); font-size: 20px; margin: 3px 0 0; }
@@ -560,6 +604,7 @@ a { color: inherit; }
   .page { padding: 38px 28px 70px; }
   .definition-grid { grid-template-columns: repeat(2, 1fr); }
   .decision-grid { grid-template-columns: repeat(2, 1fr); }
+  .codebook-before-after { grid-template-columns: 1fr; }
   .import-controls { grid-template-columns: repeat(2, 1fr); }
   .mapping-grid { grid-template-columns: repeat(2, 1fr); }
   .audit-metrics { grid-template-columns: repeat(2, 1fr); }
@@ -647,6 +692,8 @@ a { color: inherit; }
   .comparison-divider { min-height: 35px; }
   .comparison-divider::before { height: 1px; width: 100%; border: 0; border-top: 1px dashed var(--line-dark); }
   .definition-grid, .decision-grid { grid-template-columns: 1fr; }
+  .codebook-change-meta, .affected-excerpts > div, .ledger-comparison, .ledger-work { grid-template-columns: 1fr; }
+  .codebook-change-editor { padding: 17px; }
   .definition-grid article > p { min-height: 0; }
   .resolution-section { padding: 20px; }
   .resolution-footer { align-items: stretch; flex-direction: column; }

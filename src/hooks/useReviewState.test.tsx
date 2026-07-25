@@ -12,6 +12,7 @@ function savedState(): ReviewState {
     frozen: null,
     reviews: [],
     resolutions: [],
+    codebookChanges: [],
     selectedExcerptId: null,
     reviewerMode: 'mock',
     providerConsent: null,

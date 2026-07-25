@@ -28,6 +28,9 @@ All notable changes to QualiAudit are documented here. The project follows [Sema
 - Unicode-normalized code checks, optional second-coder code validation, segment-boundary warnings, and a fictional import regression corpus.
 - Visible, editable import-profile suggestions for selected NVivo codebook/coding-report, MAXQDA retrieved-segment, and ATLAS.ti quotation-report `.xlsx` layouts.
 - Conservative multi-signal profile detection, manual fallback for unresolved fields, explicit native-project boundaries, and a fictional four-sheet interoperability fixture.
+- An append-only codebook-change ledger for “Revise codebook” resolutions with frozen before/proposed after guidance, author, rationale, timestamp, affected excerpts, and unresolved recoding work.
+- Project-file schema version 2 with safe version 1 migration, codebook-ledger integrity checks, and linked resolution events.
+- Audit bundle schema version 0.3 with codebook-change history and a flattened unresolved-recoding list.
 
 ## [0.1.0] - 2026-07-22
 

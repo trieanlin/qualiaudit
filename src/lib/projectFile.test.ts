@@ -34,12 +34,43 @@ function completedState(): ReviewState {
       decided_at: '2026-07-25T09:00:00.000Z',
       changed_after_ai_exposure: true,
     }],
+    codebookChanges: [],
     selectedExcerptId: null,
     reviewerMode: 'mock',
     providerConsent: null,
     reviewRequestId: 'portable-project-test-request',
     remoteRequestStarted: false,
   }
+}
+
+function addCodebookChange(source: ReviewState): void {
+  const before = SAMPLE_CODEBOOK.find((item) => item.code === 'FAMILY_FEEDBACK')
+  if (!before) throw new Error('Missing sample code')
+  source.resolutions[0] = {
+    excerpt_id: 'SYN-002',
+    decision: 'revise_codebook',
+    rationale: 'The boundary between welcomed feedback and monitoring needs clearer guidance.',
+    final_code: 'FAMILY_FEEDBACK',
+    codebook_change_id: 'change-family-feedback',
+    decided_at: '2026-07-25T09:00:00.000Z',
+    changed_after_ai_exposure: true,
+  }
+  source.codebookChanges = [{
+    ledger_version: 'qualiaudit-codebook-change-v0.1',
+    id: 'change-family-feedback',
+    trigger_excerpt_id: 'SYN-002',
+    code: 'FAMILY_FEEDBACK',
+    before: { ...before },
+    after: {
+      ...before,
+      definition: 'How welcomed, negotiated, or unwanted family feedback shapes engagement.',
+    },
+    author: 'Researcher',
+    rationale: 'The boundary between welcomed feedback and monitoring needs clearer guidance.',
+    created_at: '2026-07-25T09:00:00.000Z',
+    affected_excerpt_ids: ['SYN-002', 'SYN-007'],
+    unresolved_recode_excerpt_ids: ['SYN-002', 'SYN-007'],
+  }]
 }
 
 describe('portable project files', () => {
@@ -51,7 +82,7 @@ describe('portable project files', () => {
 
     expect(restored).toMatchObject({
       format: 'qualiaudit-project',
-      schema_version: 1,
+      schema_version: 2,
       exported_at: '2026-07-25T09:05:00.000Z',
     })
     expect(restored.state.view).toBe('audit')
@@ -63,6 +94,39 @@ describe('portable project files', () => {
       decision: 'keep_both',
       changed_after_ai_exposure: true,
     })
+  })
+
+  it('round-trips codebook change history without rewriting the frozen baseline', () => {
+    const source = completedState()
+    addCodebookChange(source)
+
+    const restored = parsePortableProjectFile(serialisePortableProject(source))
+    expect(restored.state.codebookChanges[0]).toMatchObject({
+      id: 'change-family-feedback',
+      code: 'FAMILY_FEEDBACK',
+      author: 'Researcher',
+      affected_excerpt_ids: ['SYN-002', 'SYN-007'],
+      unresolved_recode_excerpt_ids: ['SYN-002', 'SYN-007'],
+    })
+    expect(restored.state.codebookChanges[0].before).toEqual(
+      restored.state.frozen?.codebook.find((item) => item.code === 'FAMILY_FEEDBACK'),
+    )
+    expect(restored.state.codebookChanges[0].after.definition).toContain('negotiated')
+    expect(restored.state.frozen?.codebook.find((item) => item.code === 'FAMILY_FEEDBACK')?.definition)
+      .toBe(SAMPLE_CODEBOOK.find((item) => item.code === 'FAMILY_FEEDBACK')?.definition)
+  })
+
+  it('migrates legacy version 1 project files with an empty change ledger', () => {
+    const legacy = JSON.parse(serialisePortableProject(completedState())) as {
+      schema_version: number
+      state: Record<string, unknown>
+    }
+    legacy.schema_version = 1
+    delete legacy.state.codebookChanges
+
+    const restored = parsePortableProjectFile(JSON.stringify(legacy))
+    expect(restored.schema_version).toBe(2)
+    expect(restored.state.codebookChanges).toEqual([])
   })
 
   it('normalises an invalid case selection to the review queue', () => {
@@ -111,7 +175,7 @@ describe('portable project files', () => {
     ))
 
     const unsupported = JSON.parse(serialisePortableProject(completedState())) as Record<string, unknown>
-    unsupported.schema_version = 2
+    unsupported.schema_version = 999
     expect(() => parsePortableProjectFile(JSON.stringify(unsupported))).toThrow(/version is not supported/)
   })
 
@@ -120,6 +184,16 @@ describe('portable project files', () => {
     source.reviews[0] = { ...source.reviews[0], excerpt_id: 'MISSING' }
 
     expect(() => parsePortableProjectFile(serialisePortableProject(source))).toThrow(/not in the frozen record/)
+  })
+
+  it('rejects a codebook change that rewrites its frozen baseline', () => {
+    const source = completedState()
+    addCodebookChange(source)
+    source.codebookChanges[0].before.definition = 'Rewritten historical definition'
+
+    expect(() => parsePortableProjectFile(serialisePortableProject(source))).toThrow(
+      /does not match the frozen codebook baseline/,
+    )
   })
 
   it('creates a filesystem-friendly project filename', () => {

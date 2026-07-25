@@ -19,6 +19,7 @@ export interface LocalDataSummary {
   excerptCount: number
   reviewCount: number
   decisionCount: number
+  codebookChangeCount: number
   frozen: boolean
   approximateBytes: number
 }
@@ -34,6 +35,7 @@ export function summariseLocalData(state: ReviewState): LocalDataSummary {
     excerptCount: state.excerpts.length,
     reviewCount: state.reviews.length,
     decisionCount: state.resolutions.length,
+    codebookChangeCount: state.codebookChanges.length,
     frozen: Boolean(state.frozen),
     approximateBytes: new TextEncoder().encode(serialised).byteLength,
   }

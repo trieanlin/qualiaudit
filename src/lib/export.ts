@@ -1,5 +1,6 @@
 import type {
   AiReview,
+  CodebookChange,
   CodeDefinition,
   FrozenSnapshot,
   HumanCodedExcerpt,
@@ -72,12 +73,13 @@ export function buildAuditBundle(args: {
   frozen: FrozenSnapshot
   reviews: AiReview[]
   resolutions: Resolution[]
+  codebookChanges: CodebookChange[]
 }) {
-  const { project, codebook, excerpts, frozen, reviews, resolutions } = args
+  const { project, codebook, excerpts, frozen, reviews, resolutions, codebookChanges } = args
   const firstReview = reviews[0]
   const usedOpenAi = firstReview?.provider === 'openai'
   return {
-    schema_version: 'qualiaudit-audit-v0.2',
+    schema_version: 'qualiaudit-audit-v0.3',
     exported_at: new Date().toISOString(),
     project,
     methodological_safeguards: {
@@ -111,7 +113,14 @@ export function buildAuditBundle(args: {
     reviewed_coding_table: buildReviewedRows(excerpts, reviews, resolutions),
     ai_reviews: reviews,
     decision_log: resolutions,
-    codebook_changes: resolutions.filter((item) => item.decision === 'revise_codebook'),
+    codebook_change_ledger: codebookChanges,
+    unresolved_recoding_work: codebookChanges.flatMap((change) => (
+      change.unresolved_recode_excerpt_ids.map((excerptId) => ({
+        codebook_change_id: change.id,
+        code: change.code,
+        excerpt_id: excerptId,
+      }))
+    )),
     unresolved_cases: resolutions.filter((item) => item.decision === 'unresolved'),
     human_decisions_changed_after_ai_exposure: resolutions.filter((item) => item.changed_after_ai_exposure),
   }

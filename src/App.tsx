@@ -13,7 +13,7 @@ import { useReviewState } from './hooks/useReviewState'
 import { downloadText } from './lib/export'
 import { projectFileName, serialisePortableProject } from './lib/projectFile'
 import { REMOTE_REVIEW_EXACT_FIELDS, REVIEWER_CONSENT_VERSION } from './lib/reviewerProtocol'
-import type { AiReview, ProjectBrief, Resolution, ReviewerMode } from './types'
+import type { AiReview, CodebookChange, ProjectBrief, Resolution, ReviewerMode } from './types'
 
 function cloneSample() {
   return {
@@ -35,6 +35,7 @@ export default function App() {
       frozen: null,
       reviews: [],
       resolutions: [],
+      codebookChanges: [],
       selectedExcerptId: null,
       reviewerMode: 'mock',
       providerConsent: null,
@@ -51,6 +52,7 @@ export default function App() {
       frozen: null,
       reviews: [],
       resolutions: [],
+      codebookChanges: [],
       selectedExcerptId: null,
       reviewerMode: 'mock',
       providerConsent: null,
@@ -86,6 +88,7 @@ export default function App() {
       },
       reviews: [],
       resolutions: [],
+      codebookChanges: [],
       view: 'reviewing',
       reviewerMode,
       providerConsent: reviewerMode === 'openai'
@@ -107,9 +110,16 @@ export default function App() {
 
   const openCase = (excerptId: string) => patchState({ selectedExcerptId: excerptId, view: 'case' })
 
-  const saveResolution = (resolution: Resolution) => {
+  const saveResolution = (resolution: Resolution, codebookChange?: CodebookChange) => {
     const next = state.resolutions.filter((item) => item.excerpt_id !== resolution.excerpt_id)
-    patchState({ resolutions: [...next, resolution], view: 'queue', selectedExcerptId: null })
+    patchState({
+      resolutions: [...next, resolution],
+      codebookChanges: codebookChange
+        ? [...state.codebookChanges, codebookChange]
+        : state.codebookChanges,
+      view: 'queue',
+      selectedExcerptId: null,
+    })
   }
 
   const navigate = (view: typeof state.view) => patchState({ view, selectedExcerptId: null })
@@ -143,6 +153,9 @@ export default function App() {
   const selectedHuman = activeExcerpts.find((item) => item.excerpt_id === state.selectedExcerptId)
   const selectedAi = state.reviews.find((item) => item.excerpt_id === state.selectedExcerptId)
   const selectedResolution = state.resolutions.find((item) => item.excerpt_id === state.selectedExcerptId)
+  const selectedCodebookChange = selectedResolution?.codebook_change_id
+    ? state.codebookChanges.find((item) => item.id === selectedResolution.codebook_change_id)
+    : undefined
 
   return (
     <>
@@ -218,8 +231,10 @@ export default function App() {
           project={activeProject}
           codebook={activeCodebook}
           human={selectedHuman}
+          excerpts={activeExcerpts}
           ai={selectedAi}
           existing={selectedResolution}
+          existingCodebookChange={selectedCodebookChange}
           onBack={() => patchState({ view: 'queue', selectedExcerptId: null })}
           onSave={saveResolution}
         />
@@ -232,6 +247,7 @@ export default function App() {
           frozen={state.frozen}
           reviews={state.reviews}
           resolutions={state.resolutions}
+          codebookChanges={state.codebookChanges}
           onBack={() => patchState({ view: 'queue' })}
           onOpenCase={openCase}
         />

@@ -2,6 +2,7 @@ import type { ReviewState } from '../hooks/useReviewState'
 import type {
   AiReview,
   AppView,
+  CodebookChange,
   CodeDefinition,
   Confidence,
   FrozenSnapshot,
@@ -15,8 +16,9 @@ import type {
 import { REVIEWER_CONSENT_VERSION } from './reviewerProtocol'
 
 export const PROJECT_FILE_FORMAT = 'qualiaudit-project'
-export const PROJECT_FILE_SCHEMA_VERSION = 1
+export const PROJECT_FILE_SCHEMA_VERSION = 2
 export const MAX_PROJECT_FILE_SIZE = 20 * 1024 * 1024
+const SUPPORTED_PROJECT_FILE_VERSIONS = new Set([1, PROJECT_FILE_SCHEMA_VERSION])
 
 const APP_VIEWS = new Set<AppView>(['landing', 'setup', 'materials', 'freeze', 'reviewing', 'queue', 'case', 'audit'])
 const CONFIDENCE_VALUES = new Set<Confidence>(['low', 'medium', 'high'])
@@ -61,6 +63,10 @@ function array(value: unknown, label: string): unknown[] {
   return value
 }
 
+function textArray(value: unknown, label: string): string[] {
+  return array(value, label).map((item, index) => text(item, `${label} item ${index + 1}`))
+}
+
 function text(value: unknown, label: string, allowEmpty = false): string {
   if (typeof value !== 'string' || (!allowEmpty && value.trim().length === 0)) {
     throw new ProjectFileError(`${label} must be ${allowEmpty ? 'text' : 'non-empty text'}.`)
@@ -95,8 +101,8 @@ function parseProject(value: unknown, label = 'Project'): ProjectBrief {
   }
 }
 
-function parseCodeDefinition(value: unknown, index: number): CodeDefinition {
-  const label = `Codebook row ${index + 1}`
+function parseCodeDefinition(value: unknown, index: number, customLabel?: string): CodeDefinition {
+  const label = customLabel ?? `Codebook row ${index + 1}`
   const item = record(value, label)
   return {
     code: text(item.code, `${label} code`),
@@ -132,7 +138,7 @@ function parseSnapshot(value: unknown): FrozenSnapshot {
   return {
     frozenAt: isoDate(item.frozenAt, 'Frozen snapshot date'),
     project: parseProject(item.project, 'Frozen project'),
-    codebook: array(item.codebook, 'Frozen codebook').map(parseCodeDefinition),
+    codebook: array(item.codebook, 'Frozen codebook').map((row, index) => parseCodeDefinition(row, index)),
     humanCoding: array(item.humanCoding, 'Frozen human coding').map((row, index) => parseExcerpt(row, index, 'Frozen excerpt')),
   }
 }
@@ -217,8 +223,39 @@ function parseResolution(value: unknown, index: number): Resolution {
     decision: decision as ResolutionDecision,
     rationale: text(item.rationale, `${label} rationale`),
     final_code: optionalText(item.final_code, `${label} final code`),
+    codebook_change_id: optionalText(item.codebook_change_id, `${label} codebook change ID`),
     decided_at: isoDate(item.decided_at, `${label} decision date`),
     changed_after_ai_exposure: item.changed_after_ai_exposure,
+  }
+}
+
+function parseCodebookChange(value: unknown, index: number): CodebookChange {
+  const label = `Codebook change ${index + 1}`
+  const item = record(value, label)
+  if (item.ledger_version !== 'qualiaudit-codebook-change-v0.1') {
+    throw new ProjectFileError(`${label} uses an unsupported ledger version.`)
+  }
+  const code = text(item.code, `${label} code`)
+  const before = parseCodeDefinition(item.before, 0, `${label} frozen definition`)
+  const after = parseCodeDefinition(item.after, 0, `${label} proposed definition`)
+  if (before.code !== code || after.code !== code) {
+    throw new ProjectFileError(`${label} must use the same code before and after the proposed revision.`)
+  }
+  return {
+    ledger_version: 'qualiaudit-codebook-change-v0.1',
+    id: text(item.id, `${label} ID`),
+    trigger_excerpt_id: text(item.trigger_excerpt_id, `${label} trigger excerpt ID`),
+    code,
+    before,
+    after,
+    author: text(item.author, `${label} author`),
+    rationale: text(item.rationale, `${label} rationale`),
+    created_at: isoDate(item.created_at, `${label} creation date`),
+    affected_excerpt_ids: textArray(item.affected_excerpt_ids, `${label} affected excerpts`),
+    unresolved_recode_excerpt_ids: textArray(
+      item.unresolved_recode_excerpt_ids,
+      `${label} unresolved recoding excerpts`,
+    ),
   }
 }
 
@@ -237,14 +274,25 @@ function resumeView(state: ReviewState): AppView {
   return state.view === 'setup' ? 'setup' : 'materials'
 }
 
-function parseState(value: unknown): ReviewState {
+function sameCodeDefinition(left: CodeDefinition, right: CodeDefinition): boolean {
+  return left.code === right.code
+    && left.definition === right.definition
+    && left.include_when === right.include_when
+    && left.exclude_when === right.exclude_when
+    && (left.example ?? '') === (right.example ?? '')
+}
+
+function parseState(value: unknown, sourceSchemaVersion: number): ReviewState {
   const item = record(value, 'Project state')
   const project = parseProject(item.project)
-  const codebook = array(item.codebook, 'Codebook').map(parseCodeDefinition)
+  const codebook = array(item.codebook, 'Codebook').map((row, index) => parseCodeDefinition(row, index))
   const excerpts = array(item.excerpts, 'Human-coded excerpts').map((row, index) => parseExcerpt(row, index))
   const frozen = item.frozen == null ? null : parseSnapshot(item.frozen)
   const reviews = array(item.reviews, 'AI reviews').map(parseReview)
   const resolutions = array(item.resolutions, 'Resolutions').map(parseResolution)
+  const codebookChanges = sourceSchemaVersion >= 2
+    ? array(item.codebookChanges, 'Codebook changes').map(parseCodebookChange)
+    : []
   const rawView = text(item.view, 'Saved view')
   if (!APP_VIEWS.has(rawView as AppView)) throw new ProjectFileError('The saved view is not supported.')
   const selectedExcerptId = item.selectedExcerptId == null ? null : text(item.selectedExcerptId, 'Selected excerpt ID')
@@ -257,6 +305,7 @@ function parseState(value: unknown): ReviewState {
   uniqueIds(excerpts.map((row) => row.excerpt_id), 'Human-coded excerpts')
   uniqueIds(reviews.map((row) => row.excerpt_id), 'AI reviews')
   uniqueIds(resolutions.map((row) => row.excerpt_id), 'Resolutions')
+  uniqueIds(codebookChanges.map((row) => row.id), 'Codebook changes')
 
   const activeExcerptIds = new Set((frozen?.humanCoding ?? excerpts).map((row) => row.excerpt_id))
   if (reviews.some((review) => !activeExcerptIds.has(review.excerpt_id))) {
@@ -264,6 +313,39 @@ function parseState(value: unknown): ReviewState {
   }
   if (resolutions.some((resolution) => !activeExcerptIds.has(resolution.excerpt_id))) {
     throw new ProjectFileError('A resolution refers to an excerpt that is not in the frozen record.')
+  }
+  const frozenCodebookByCode = new Map((frozen?.codebook ?? codebook).map((definition) => [definition.code, definition]))
+  for (const change of codebookChanges) {
+    if (!activeExcerptIds.has(change.trigger_excerpt_id)) {
+      throw new ProjectFileError('A codebook change refers to a trigger excerpt that is not in the frozen record.')
+    }
+    uniqueIds(change.affected_excerpt_ids, `Codebook change ${change.id} affected excerpts`)
+    uniqueIds(change.unresolved_recode_excerpt_ids, `Codebook change ${change.id} unresolved recoding excerpts`)
+    if (change.affected_excerpt_ids.some((excerptId) => !activeExcerptIds.has(excerptId))) {
+      throw new ProjectFileError('A codebook change refers to an affected excerpt that is not in the frozen record.')
+    }
+    if (change.unresolved_recode_excerpt_ids.some((excerptId) => !change.affected_excerpt_ids.includes(excerptId))) {
+      throw new ProjectFileError('Unresolved recoding work must be a subset of the affected excerpts.')
+    }
+    const frozenDefinition = frozenCodebookByCode.get(change.code)
+    if (!frozenDefinition || !sameCodeDefinition(change.before, frozenDefinition)) {
+      throw new ProjectFileError('A codebook change does not match the frozen codebook baseline.')
+    }
+    if (sameCodeDefinition(change.before, change.after)) {
+      throw new ProjectFileError('A codebook change must contain a proposed revision.')
+    }
+  }
+  const codebookChangeById = new Map(codebookChanges.map((change) => [change.id, change]))
+  for (const resolution of resolutions) {
+    if (!resolution.codebook_change_id) continue
+    const change = codebookChangeById.get(resolution.codebook_change_id)
+    if (
+      resolution.decision !== 'revise_codebook'
+      || !change
+      || change.trigger_excerpt_id !== resolution.excerpt_id
+    ) {
+      throw new ProjectFileError('A resolution refers to an invalid codebook-change event.')
+    }
   }
   if (reviews.length > 0 && !frozen) {
     throw new ProjectFileError('AI reviews are present without a frozen human interpretation.')
@@ -280,6 +362,7 @@ function parseState(value: unknown): ReviewState {
     frozen,
     reviews,
     resolutions,
+    codebookChanges,
     selectedExcerptId,
     reviewerMode,
     providerConsent,
@@ -324,8 +407,8 @@ export function parsePortableProjectFile(source: string): PortableProjectFile {
   if (file.format !== PROJECT_FILE_FORMAT) {
     throw new ProjectFileError('This is not a QualiAudit project file. Audit JSON exports cannot be resumed.')
   }
-  if (file.schema_version !== PROJECT_FILE_SCHEMA_VERSION) {
-    throw new ProjectFileError(`This project-file version is not supported. Expected version ${PROJECT_FILE_SCHEMA_VERSION}.`)
+  if (typeof file.schema_version !== 'number' || !SUPPORTED_PROJECT_FILE_VERSIONS.has(file.schema_version)) {
+    throw new ProjectFileError(`This project-file version is not supported. Expected version 1 or ${PROJECT_FILE_SCHEMA_VERSION}.`)
   }
   const application = record(file.application, 'Application metadata')
   if (application.name !== 'QualiAudit') throw new ProjectFileError('The project file has invalid application metadata.')
@@ -338,7 +421,7 @@ export function parsePortableProjectFile(source: string): PortableProjectFile {
       name: 'QualiAudit',
       version: text(application.version, 'Application version'),
     },
-    state: parseState(file.state),
+    state: parseState(file.state, file.schema_version),
   }
 }
 
