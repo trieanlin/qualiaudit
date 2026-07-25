@@ -105,7 +105,7 @@ npm run check:release
 npm run check
 ```
 
-The test suite covers validation, comma/semicolon/tab-delimited parsing, Unicode and structural import failures, multi-code and segment-boundary diagnostics, blind payload construction, deterministic review structure, method-aware queue labels, comparison categories, spreadsheet mapping, the downloadable workbook fixture, versioned project-file recovery, explicit browser-record deletion, and CSV/JSON audit data.
+The test suite covers validation, comma/semicolon/tab-delimited parsing, Unicode and structural import failures, multi-code and segment-boundary diagnostics, blind payload construction, deterministic review structure, method-aware queue labels, comparison categories, spreadsheet and research-tool profile mapping, fictional workbook fixtures, versioned project-file recovery, explicit browser-record deletion, and CSV/JSON audit data.
 
 ## Data and templates
 
@@ -118,9 +118,11 @@ The bundled files under [`public/samples`](public/samples) are fictional and con
 
 CSV, TSV, and Excel (`.xlsx`) upload are implemented for codebooks and human-coded excerpts. Delimited-text import detects comma, semicolon, or tab structure, preserves quoted multiline and Unicode content, strips a UTF-8 byte-order mark, and rejects duplicated headers, unclosed quotes, or inconsistent row widths before replacing the current record. Excel import includes worksheet selection, header-row detection, explicit column mapping, and a source preview before replacement. Parsing happens in the browser and the demo supports up to 10 MB or 5,000 data rows per text file or selected sheet.
 
+For selected English-language tabular layouts, QualiAudit can suggest mappings for an NVivo codebook or coding report, MAXQDA retrieved segments, and an ATLAS.ti quotation report. Suggestions come from visible column labels and must be confirmed by the researcher; missing required fields still block import. See [Research-tool import profiles](docs/IMPORT_PROFILES.md) for recognised signals, official documentation, and compatibility limits.
+
 Validation does not silently flatten multiple human codes into one. A primary code cell containing multiple known codebook values becomes a blocking issue, and overlapping excerpts from the same source produce a non-blocking segment-boundary warning. The fictional regression corpus under [`test-fixtures/import`](test-fixtures/import) makes these assumptions inspectable.
 
-Direct export profiles for qualitative research tools remain roadmap items. QualiAudit does not parse proprietary project files.
+These profiles do not parse native project files, guarantee compatibility with every vendor version or locale, infer codes from sheet names, or silently flatten multi-code cells.
 
 The **Save project** action creates a resumable, versioned QualiAudit JSON file. This is different from **Export audit JSON**, which is a reporting record and cannot be reopened as a working project. Restoring a project first shows its name, method, stage, material counts, and export date before replacing browser state.
 
@@ -167,6 +169,7 @@ v0.1 does not:
 - [Contributing](CONTRIBUTING.md)
 - [Security and research-data guidance](SECURITY.md)
 - [Architecture note](docs/ARCHITECTURE.md)
+- [Research-tool import profiles](docs/IMPORT_PROFILES.md)
 - [Browser encryption feasibility](docs/ENCRYPTION_FEASIBILITY.md)
 - [Issue-ready backlog](docs/ISSUE_BACKLOG.md)
 - [Release privacy and secret checklist](docs/RELEASE_CHECKLIST.md)

@@ -209,8 +209,12 @@ a { color: inherit; }
 .spinner { width: 20px; height: 20px; border: 2px solid #cbd5ce; border-top-color: var(--sage); border-radius: 50%; animation: spin .8s linear infinite; }
 .excel-local-note { display: flex; gap: 9px; align-items: center; margin-bottom: 18px; padding: 10px 12px; color: #526d5d; background: #eaf1eb; border: 1px solid #d3e0d5; border-radius: 7px; font-size: 10px; line-height: 1.45; }
 .excel-local-note svg { flex: 0 0 auto; }
-.import-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.import-controls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .import-controls .field { margin-bottom: 15px; }
+.profile-suggestion { margin-bottom: 14px; padding: 12px 13px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, .7fr); gap: 18px; color: #526d5d; background: #f2f5ef; border: 1px solid #d8e1d7; border-radius: 7px; font-size: 9px; line-height: 1.5; }
+.profile-suggestion strong, .profile-suggestion span { display: block; }
+.profile-suggestion strong { margin-bottom: 2px; color: var(--ink); font-size: 10px; }
+.profile-suggestion p { margin: 0; padding-left: 18px; border-left: 1px solid #d8e1d7; }
 .mapping-section, .preview-section { margin-top: 7px; padding: 19px; background: var(--white); border: 1px solid var(--line); border-radius: 9px; }
 .preview-section { margin-top: 12px; }
 .mapping-heading { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 14px; }
@@ -513,6 +517,7 @@ a { color: inherit; }
   .page { padding: 38px 28px 70px; }
   .definition-grid { grid-template-columns: repeat(2, 1fr); }
   .decision-grid { grid-template-columns: repeat(2, 1fr); }
+  .import-controls { grid-template-columns: repeat(2, 1fr); }
   .mapping-grid { grid-template-columns: repeat(2, 1fr); }
   .audit-metrics { grid-template-columns: repeat(2, 1fr); }
   .audit-metrics article:nth-child(3) { border-left: 0; border-top: 1px solid var(--line); }
@@ -560,6 +565,8 @@ a { color: inherit; }
   .dialog-header h2 { font-size: 22px; }
   .dialog-body { padding: 16px 17px 20px; }
   .import-controls, .mapping-grid { grid-template-columns: 1fr; }
+  .profile-suggestion { grid-template-columns: 1fr; gap: 8px; }
+  .profile-suggestion p { padding: 8px 0 0; border-left: 0; border-top: 1px solid #d8e1d7; }
   .mapping-section, .preview-section { padding: 15px; }
   .dialog-footer { padding: 13px 17px; align-items: stretch; flex-direction: column; }
   .dialog-footer > div { width: 100%; }

@@ -1,6 +1,13 @@
 import { CircleAlert, FileSpreadsheet, LockKeyhole, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import {
+  detectImportProfile,
+  getImportProfile,
+  profilesForImport,
+  type ImportProfile,
+  type ImportProfileId,
+} from '../lib/importProfiles'
+import {
   fieldsForImport,
   guessColumnMapping,
   mapImportRows,
@@ -30,12 +37,23 @@ function rowSummary(row: string[]): string {
   return values.length > 0 ? values.join(' · ') : '(empty row)'
 }
 
+function suggestedMapping(headers: string[], kind: SpreadsheetImportKind, fields: ReturnType<typeof fieldsForImport>) {
+  const profile = detectImportProfile(headers, kind)
+  return {
+    profile,
+    mapping: guessColumnMapping(headers, fields, profile ?? undefined),
+  }
+}
+
 export function SpreadsheetImportDialog({ file, kind, downloadUrl, onClose, onImport }: SpreadsheetImportDialogProps) {
   const fields = useMemo(() => fieldsForImport(kind), [kind])
+  const availableProfiles = useMemo(() => profilesForImport(kind), [kind])
   const [sheets, setSheets] = useState<WorkbookSheet[]>([])
   const [sheetIndex, setSheetIndex] = useState(0)
   const [headerRowIndex, setHeaderRowIndex] = useState(0)
   const [mapping, setMapping] = useState<ColumnMapping>({})
+  const [profileId, setProfileId] = useState<'generic' | ImportProfileId>('generic')
+  const [detectedProfileId, setDetectedProfileId] = useState<ImportProfileId | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -65,15 +83,29 @@ export function SpreadsheetImportDialog({ file, kind, downloadUrl, onClose, onIm
         }
         const preferredSheet = loadedSheets.findIndex((sheet) => {
           const name = sheet.name.toLowerCase()
-          return kind === 'codebook' ? name.includes('codebook') : name.includes('excerpt') || name.includes('coding')
+          if (name === 'info' || name.includes('metadata')) return false
+          return kind === 'codebook'
+            ? name.includes('codebook') || name === 'codes' || name.includes('code list')
+            : name.includes('excerpt') || name.includes('coding') || name.includes('quotation') || name.includes('segment')
         })
-        const initialSheetIndex = preferredSheet >= 0 ? preferredSheet : 0
+        const firstNonMetadataSheet = loadedSheets.findIndex((sheet) => {
+          const name = sheet.name.toLowerCase()
+          return name !== 'info' && !name.includes('metadata')
+        })
+        const initialSheetIndex = preferredSheet >= 0
+          ? preferredSheet
+          : firstNonMetadataSheet >= 0
+            ? firstNonMetadataSheet
+            : 0
         const initialHeaderRow = suggestHeaderRow(loadedSheets[initialSheetIndex], fields)
         const initialTable = tableFromSheet(loadedSheets[initialSheetIndex], initialHeaderRow)
+        const suggestion = suggestedMapping(initialTable.headers, kind, fields)
         setSheets(loadedSheets)
         setSheetIndex(initialSheetIndex)
         setHeaderRowIndex(initialHeaderRow)
-        setMapping(guessColumnMapping(initialTable.headers, fields))
+        setDetectedProfileId(suggestion.profile?.id ?? null)
+        setProfileId(suggestion.profile?.id ?? 'generic')
+        setMapping(suggestion.mapping)
       } catch {
         if (!cancelled) setError('This .xlsx file could not be read. Check that it is a valid, unencrypted Excel workbook.')
       } finally {
@@ -88,6 +120,9 @@ export function SpreadsheetImportDialog({ file, kind, downloadUrl, onClose, onIm
 
   const sheet = sheets[sheetIndex]
   const table = useMemo(() => sheet ? tableFromSheet(sheet, headerRowIndex) : { headers: [], rows: [] }, [sheet, headerRowIndex])
+  const selectedProfile = useMemo<ImportProfile | null>(() => (
+    profileId === 'generic' ? null : getImportProfile(profileId)
+  ), [profileId])
   const missingRequired = useMemo(() => missingRequiredMappings(mapping, fields), [mapping, fields])
   const tooManyRows = table.rows.length > MAX_IMPORT_ROWS
   const canImport = !loading && !error && table.rows.length > 0 && !tooManyRows && missingRequired.length === 0
@@ -96,20 +131,33 @@ export function SpreadsheetImportDialog({ file, kind, downloadUrl, onClose, onIm
     const nextSheet = sheets[nextIndex]
     const nextHeaderRow = suggestHeaderRow(nextSheet, fields)
     const nextTable = tableFromSheet(nextSheet, nextHeaderRow)
+    const suggestion = suggestedMapping(nextTable.headers, kind, fields)
     setSheetIndex(nextIndex)
     setHeaderRowIndex(nextHeaderRow)
-    setMapping(guessColumnMapping(nextTable.headers, fields))
+    setDetectedProfileId(suggestion.profile?.id ?? null)
+    setProfileId(suggestion.profile?.id ?? 'generic')
+    setMapping(suggestion.mapping)
   }
 
   const chooseHeaderRow = (nextHeaderRow: number) => {
     const nextTable = tableFromSheet(sheet, nextHeaderRow)
+    const suggestion = suggestedMapping(nextTable.headers, kind, fields)
     setHeaderRowIndex(nextHeaderRow)
-    setMapping(guessColumnMapping(nextTable.headers, fields))
+    setDetectedProfileId(suggestion.profile?.id ?? null)
+    setProfileId(suggestion.profile?.id ?? 'generic')
+    setMapping(suggestion.mapping)
+  }
+
+  const chooseProfile = (nextProfileId: 'generic' | ImportProfileId) => {
+    const nextProfile = nextProfileId === 'generic' ? undefined : getImportProfile(nextProfileId)
+    setProfileId(nextProfileId)
+    setMapping(guessColumnMapping(table.headers, fields, nextProfile))
   }
 
   const confirmImport = () => {
     if (!canImport || !sheet) return
-    onImport(mapImportRows(table, mapping, fields), `${file.name} · ${sheet.name}`)
+    const profileSource = selectedProfile ? ` · ${selectedProfile.label}` : ''
+    onImport(mapImportRows(table, mapping, fields), `${file.name} · ${sheet.name}${profileSource}`)
   }
 
   return (
@@ -146,7 +194,27 @@ export function SpreadsheetImportDialog({ file, kind, downloadUrl, onClose, onIm
                   {sheet.rows.slice(0, 10).map((row, index) => <option value={index} key={`${index}-${rowSummary(row)}`}>Row {index + 1}: {rowSummary(row)}</option>)}
                 </select>
               </label>
+              <label className="field">
+                <span>Import profile</span>
+                <select
+                  value={profileId}
+                  onChange={(event) => chooseProfile(event.target.value as 'generic' | ImportProfileId)}
+                >
+                  <option value="generic">Generic / manual mapping</option>
+                  {availableProfiles.map((profile) => <option value={profile.id} key={profile.id}>{profile.label}</option>)}
+                </select>
+              </label>
             </div>
+
+            {selectedProfile && (
+              <div className="profile-suggestion" aria-live="polite">
+                <div>
+                  <strong>{detectedProfileId === selectedProfile.id ? 'Suggested from column labels' : 'Selected mapping aid'} · {selectedProfile.label}</strong>
+                  <span>{selectedProfile.description}</span>
+                </div>
+                <p>Confirm every mapping. QualiAudit reads this workbook only; it does not open {selectedProfile.tool} project files.</p>
+              </div>
+            )}
 
             <section className="mapping-section" aria-labelledby="mapping-heading">
               <div className="mapping-heading">
