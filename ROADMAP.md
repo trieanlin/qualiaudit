@@ -24,9 +24,10 @@ This roadmap treats product, methodological, governance, and engineering work as
 - [x] Server-side provider adapter foundation; no API key in browser code.
 - [x] Preflight disclosure of provider, region, retention, and exact fields sent.
 - [x] Explicit consent before transmission and a local mock fallback.
-- [ ] Versioned prompt/schema registry and reproducibility metadata.
+- [x] Versioned prompt/schema registry and reproducibility metadata.
 - [x] Schema validation, human-initiated retry handling, unsupported-code detection, and first request-size/count guardrails.
-- [ ] Threat model and institutional data-governance review before claiming suitability for real research data.
+- [x] Initial engineering threat model and deployment gate.
+- [ ] Institutional data-governance, ethics, privacy, and contractual review before claiming suitability for real research data.
 
 ## Phase 3 — richer audit practice
 

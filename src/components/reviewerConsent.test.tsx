@@ -17,6 +17,9 @@ function configResponse(configured: boolean) {
     retention: 'store=false; default abuse-monitoring logs may retain content for up to 30 days',
     responsesStored: false,
     consentVersion: REVIEWER_CONSENT_VERSION,
+    promptVersion: 'blind-review-v0.2',
+    schemaVersion: 'blind-review-schema-v0.2',
+    requestTimeoutMs: 45_000,
   }), {
     status: 200,
     headers: { 'Content-Type': 'application/json' },

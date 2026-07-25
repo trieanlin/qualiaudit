@@ -66,8 +66,12 @@ export interface AiReview {
   provider?: 'local-mock' | 'openai'
   model?: string
   prompt_version?: string
+  schema_version?: string
   data_destination?: 'local-browser' | 'openai-api'
   consent_version?: ProviderConsent['version']
+  request_id?: string
+  provider_request_id?: string
+  provider_response_id?: string
   reviewed_at: string
 }
 

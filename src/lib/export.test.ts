@@ -35,6 +35,44 @@ describe('audit exports', () => {
     expect(bundle.methodological_safeguards.ai_has_final_decision_authority).toBe(false)
     expect(bundle.methodological_safeguards.withheld_from_reviewer).toContain('human_code')
     expect(bundle.human_decisions_changed_after_ai_exposure).toHaveLength(1)
+    expect(bundle.reviewer.schema_version).toBe('mock-review-output-v0.1')
+  })
+
+  it('records reproducibility and provider support references for remote reviews', () => {
+    const remoteReviews = reviews.map((review) => ({
+      ...review,
+      reviewer: 'openai-responses-v0.2' as const,
+      provider: 'openai' as const,
+      model: 'deployment-model',
+      prompt_version: 'blind-review-v0.2',
+      schema_version: 'blind-review-schema-v0.2',
+      data_destination: 'openai-api' as const,
+      consent_version: 'qualiaudit-openai-consent-v0.2' as const,
+      request_id: 'qa-client-request',
+      provider_request_id: 'provider-request',
+      provider_response_id: 'resp_example',
+    }))
+    const bundle = buildAuditBundle({
+      project: SAMPLE_PROJECT,
+      codebook: SAMPLE_CODEBOOK,
+      excerpts: SAMPLE_EXCERPTS,
+      frozen: {
+        frozenAt: '2026-07-22T09:30:00.000Z',
+        project: SAMPLE_PROJECT,
+        codebook: SAMPLE_CODEBOOK,
+        humanCoding: SAMPLE_EXCERPTS,
+      },
+      reviews: remoteReviews,
+      resolutions: [resolution],
+    })
+
+    expect(bundle.reviewer).toMatchObject({
+      prompt_version: 'blind-review-v0.2',
+      schema_version: 'blind-review-schema-v0.2',
+      client_request_id: 'qa-client-request',
+      provider_request_id: 'provider-request',
+      provider_response_id: 'resp_example',
+    })
   })
 
   it('creates a named browser download and releases its object URL', () => {

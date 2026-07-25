@@ -12,7 +12,11 @@ import {
   ShieldCheck,
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { fetchReviewerProviderConfig, runOpenAiBlindReview } from '../lib/remoteReviewer'
+import {
+  fetchReviewerProviderConfig,
+  RemoteReviewerError,
+  runOpenAiBlindReview,
+} from '../lib/remoteReviewer'
 import { buildBlindReviewPayload, runMockBlindReview } from '../lib/reviewer'
 import type { ReviewerProviderConfig } from '../lib/reviewerProtocol'
 import type {
@@ -154,6 +158,8 @@ export function FreezeReview({ project, codebook, excerpts, onBack, onFreeze }: 
             <div><dt>Processing region</dt><dd>{providerConfig?.region ?? (configError ? 'Could not check' : 'Checking deployment…')}</dd></div>
             <div><dt>Retention</dt><dd>{providerConfig?.retention ?? (configError ? 'Could not check' : 'Checking deployment…')}</dd></div>
             <div><dt>Response storage</dt><dd>QualiAudit requests <code>store=false</code></dd></div>
+            <div><dt>Prompt / schema</dt><dd>{providerConfig ? `${providerConfig.promptVersion} / ${providerConfig.schemaVersion}` : configError ? 'Could not check' : 'Checking deployment…'}</dd></div>
+            <div><dt>Server timeout</dt><dd>{providerConfig ? `${Math.round(providerConfig.requestTimeoutMs / 1_000)} seconds; no automatic retry` : configError ? 'Could not check' : 'Checking deployment…'}</dd></div>
           </dl>
           <p>
             OpenAI states API data is not used to train models by default. Default abuse-monitoring logs may retain
@@ -223,9 +229,21 @@ export function Reviewing({
 }: ReviewingProps) {
   const [processed, setProcessed] = useState(0)
   const [remoteStatus, setRemoteStatus] = useState<'idle' | 'sending' | 'error'>('idle')
-  const [remoteError, setRemoteError] = useState('')
+  const [remoteIssue, setRemoteIssue] = useState<{
+    message: string
+    code: string
+    requestId?: string
+    providerRequestId?: string
+  } | null>(null)
+  const [retrySeconds, setRetrySeconds] = useState(0)
   const finished = useRef(false)
   const requested = useRef(false)
+
+  useEffect(() => {
+    if (retrySeconds <= 0) return
+    const timer = window.setTimeout(() => setRetrySeconds((current) => Math.max(0, current - 1)), 1_000)
+    return () => window.clearTimeout(timer)
+  }, [retrySeconds])
 
   useEffect(() => {
     if (reviewerMode !== 'mock') return
@@ -255,7 +273,8 @@ export function Reviewing({
     ) return
     requested.current = true
     setRemoteStatus('sending')
-    setRemoteError('')
+    setRemoteIssue(null)
+    setRetrySeconds(0)
     onRemoteStart()
     const payload = buildBlindReviewPayload(project, codebook, excerpts)
     void runOpenAiBlindReview(payload, requestId)
@@ -265,7 +284,20 @@ export function Reviewing({
       })
       .catch((error: unknown) => {
         setRemoteStatus('error')
-        setRemoteError(error instanceof Error ? error.message : 'The independent reviewer did not complete.')
+        if (error instanceof RemoteReviewerError) {
+          setRemoteIssue({
+            message: error.message,
+            code: error.code,
+            requestId: error.requestId,
+            providerRequestId: error.providerRequestId,
+          })
+          setRetrySeconds(error.retryAfterSeconds ?? 0)
+          return
+        }
+        setRemoteIssue({
+          message: error instanceof Error ? error.message : 'The independent reviewer did not complete.',
+          code: 'unknown_error',
+        })
       })
   }, [
     codebook,
@@ -280,9 +312,10 @@ export function Reviewing({
   ])
 
   const retry = () => {
+    if (retrySeconds > 0) return
     requested.current = false
     setRemoteStatus('idle')
-    setRemoteError('')
+    setRemoteIssue(null)
     onPrepareRetry()
   }
   const interrupted = reviewerMode === 'openai' && remoteRequestStarted && remoteStatus === 'idle'
@@ -307,11 +340,25 @@ export function Reviewing({
         <div className="remote-review-error">
           <AlertTriangle />
           <div>
-            <strong>{missingConsent ? 'The consent record is missing.' : interrupted ? 'The earlier request was interrupted or its outcome is unknown.' : remoteError}</strong>
+            <strong>{missingConsent ? 'The consent record is missing.' : interrupted ? 'The earlier request was interrupted or its outcome is unknown.' : remoteIssue?.message}</strong>
             <p>Human codes, rationales, confidence, second-coder fields, and final decisions remain outside the provider payload.</p>
+            {remoteIssue?.code === 'provider_rate_limited' && (
+              <p>The provider asked this deployment to wait. No research text will be resent until you choose retry after the wait ends.</p>
+            )}
+            {(remoteIssue?.requestId || remoteIssue?.providerRequestId) && (
+              <p className="support-reference">
+                Support reference:
+                {remoteIssue.requestId && <> client <code>{remoteIssue.requestId}</code></>}
+                {remoteIssue.providerRequestId && <> · provider <code>{remoteIssue.providerRequestId}</code></>}
+              </p>
+            )}
           </div>
           <div>
-            {!missingConsent && <button className="button secondary" type="button" onClick={retry}><RefreshCw size={15} /> Retry remote review</button>}
+            {!missingConsent && (
+              <button className="button secondary" type="button" disabled={retrySeconds > 0} onClick={retry}>
+                <RefreshCw size={15} /> {retrySeconds > 0 ? `Retry available in ${retrySeconds}s` : 'Retry remote review'}
+              </button>
+            )}
             <button className="button primary" type="button" onClick={onUseLocalFallback}><HardDrive size={15} /> Use local reviewer</button>
           </div>
         </div>

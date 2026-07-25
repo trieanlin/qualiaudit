@@ -57,6 +57,7 @@ describe('portable project files', () => {
     expect(restored.state.view).toBe('audit')
     expect(restored.state.frozen?.humanCoding).toHaveLength(8)
     expect(restored.state.reviews).toHaveLength(8)
+    expect(restored.state.reviews[0].schema_version).toBe('mock-review-output-v0.1')
     expect(restored.state.resolutions[0]).toMatchObject({
       excerpt_id: 'SYN-002',
       decision: 'keep_both',
@@ -72,6 +73,33 @@ describe('portable project files', () => {
     const restored = parsePortableProjectFile(serialisePortableProject(source))
     expect(restored.state.view).toBe('queue')
     expect(restored.state.selectedExcerptId).toBeNull()
+  })
+
+  it('preserves remote reviewer protocol and request provenance', () => {
+    const source = completedState()
+    source.reviews[0] = {
+      ...source.reviews[0],
+      reviewer: 'openai-responses-v0.2',
+      provider: 'openai',
+      model: 'deployment-model',
+      prompt_version: 'blind-review-v0.2',
+      schema_version: 'blind-review-schema-v0.2',
+      data_destination: 'openai-api',
+      consent_version: 'qualiaudit-openai-consent-v0.2',
+      request_id: 'qa-client-request',
+      provider_request_id: 'provider-request',
+      provider_response_id: 'resp_example',
+    }
+
+    const restored = parsePortableProjectFile(serialisePortableProject(source))
+    expect(restored.state.reviews[0]).toMatchObject({
+      reviewer: 'openai-responses-v0.2',
+      prompt_version: 'blind-review-v0.2',
+      schema_version: 'blind-review-schema-v0.2',
+      request_id: 'qa-client-request',
+      provider_request_id: 'provider-request',
+      provider_response_id: 'resp_example',
+    })
   })
 
   it('rejects audit exports and unsupported project-file versions', () => {

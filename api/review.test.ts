@@ -3,7 +3,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { SAMPLE_CODEBOOK, SAMPLE_EXCERPTS, SAMPLE_PROJECT } from '../src/data/sample'
 import { buildBlindReviewPayload } from '../src/lib/reviewer'
-import { REVIEWER_CONSENT_VERSION } from '../src/lib/reviewerProtocol'
+import {
+  OPENAI_SCHEMA_VERSION,
+  REVIEWER_CONSENT_VERSION,
+} from '../src/lib/reviewerProtocol'
 import handler, {
   buildOpenAIRequestBody,
   sanitiseBlindReviewPayload,
@@ -88,6 +91,9 @@ describe('server-side reviewer boundary', () => {
       model: 'test-review-model',
       region: 'Test account region',
       responsesStored: false,
+      promptVersion: 'blind-review-v0.2',
+      schemaVersion: OPENAI_SCHEMA_VERSION,
+      requestTimeoutMs: 45_000,
     })
     expect(JSON.stringify(result.body)).not.toContain('test-server-key')
   })
@@ -119,6 +125,7 @@ describe('server-side reviewer boundary', () => {
       expect(providerRequest.model).toBe('test-review-model')
       expect(JSON.stringify(providerRequest)).not.toContain('human_code')
       return new Response(JSON.stringify({
+        id: 'resp_test_reproducibility',
         output_text: JSON.stringify({
           reviews: [{
             excerpt_id: excerpt.excerpt_id,
@@ -133,7 +140,10 @@ describe('server-side reviewer boundary', () => {
         }),
       }), {
         status: 200,
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-request-id': 'req_provider_test',
+        },
       })
     })
     vi.stubGlobal('fetch', providerFetch)
@@ -156,13 +166,95 @@ describe('server-side reviewer boundary', () => {
         provider: 'openai',
         model: 'test-review-model',
         prompt_version: 'blind-review-v0.2',
+        schema_version: OPENAI_SCHEMA_VERSION,
         data_destination: 'openai-api',
         consent_version: REVIEWER_CONSENT_VERSION,
+        request_id: 'consented-test-request',
+        provider_request_id: 'req_provider_test',
+        provider_response_id: 'resp_test_reproducibility',
       }],
     })
     expect(providerFetch).toHaveBeenCalledOnce()
     const call = providerFetch.mock.calls[0]
     expect(call[0]).toBe('https://api.openai.com/v1/responses')
     expect((call[1]?.headers as Record<string, string>).Authorization).toBe('Bearer test-server-key')
+  })
+
+  it('returns a bounded retry instruction without exposing provider error content', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('provider-internal-detail', {
+      status: 429,
+      headers: {
+        'Retry-After': '12',
+        'x-request-id': 'req_provider_rate_limit',
+      },
+    })))
+    const { result, response } = responseRecorder()
+
+    await handler({
+      method: 'POST',
+      body: {
+        request_id: 'rate-limited-client-request',
+        consent: { granted: true, version: REVIEWER_CONSENT_VERSION },
+        payload: oneExcerptPayload(),
+      },
+    }, response)
+
+    expect(result.statusCode).toBe(429)
+    expect(result.headers.get('Retry-After')).toBe('12')
+    expect(result.body).toMatchObject({
+      error: {
+        code: 'provider_rate_limited',
+        retry_after_seconds: 12,
+        request_id: 'rate-limited-client-request',
+        provider_request_id: 'req_provider_rate_limit',
+      },
+    })
+    expect(JSON.stringify(result.body)).not.toContain('provider-internal-detail')
+  })
+
+  it('fails with an explicit timeout and never retries automatically', async () => {
+    const aborted = new Error('provider call aborted')
+    aborted.name = 'AbortError'
+    const providerFetch = vi.fn(async () => {
+      throw aborted
+    })
+    vi.stubGlobal('fetch', providerFetch)
+    const { result, response } = responseRecorder()
+
+    await handler({
+      method: 'POST',
+      body: {
+        request_id: 'timeout-client-request',
+        consent: { granted: true, version: REVIEWER_CONSENT_VERSION },
+        payload: oneExcerptPayload(),
+      },
+    }, response)
+
+    expect(result.statusCode).toBe(504)
+    expect(result.body).toMatchObject({
+      error: {
+        code: 'provider_timeout',
+        request_id: 'timeout-client-request',
+      },
+    })
+    expect(providerFetch).toHaveBeenCalledOnce()
+  })
+
+  it('rejects a request ID that cannot be safely forwarded as an ASCII header', async () => {
+    const providerFetch = vi.fn()
+    vi.stubGlobal('fetch', providerFetch)
+    const { result, response } = responseRecorder()
+
+    await handler({
+      method: 'POST',
+      body: {
+        request_id: '请求-id',
+        consent: { granted: true, version: REVIEWER_CONSENT_VERSION },
+        payload: oneExcerptPayload(),
+      },
+    }, response)
+
+    expect(result.statusCode).toBe(400)
+    expect(providerFetch).not.toHaveBeenCalled()
   })
 })

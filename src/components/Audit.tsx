@@ -33,6 +33,7 @@ export function Audit({ project, codebook, excerpts, frozen, reviews, resolution
     ? `${reviewer.model ?? 'configured model'} via OpenAI API`
     : reviewer?.model ?? reviewer?.reviewer ?? 'not run'
   const promptVersion = reviewer?.prompt_version ?? (usedOpenAi ? 'not recorded' : 'mock-rules-v0.1')
+  const schemaVersion = reviewer?.schema_version ?? (usedOpenAi ? 'not recorded' : 'mock-review-output-v0.1')
   const dataDestination = usedOpenAi ? 'OpenAI API via server endpoint' : 'Local browser only'
   const methodStatement = project.analysisMode === 'reflexive'
     ? `We used QualiAudit to support reflexive engagement with an independently generated AI reading of ${excerpts.length} coded excerpts. Human first-pass interpretations were frozen before review and withheld from ${usedOpenAi ? `the ${reviewer?.model ?? 'configured OpenAI'} reviewer` : 'the deterministic local mock reviewer'}. Divergence was treated as a prompt for reflexivity rather than an error or accuracy measure. Researchers retained final interpretive authority and documented post-exposure decisions in an audit log.`
@@ -67,9 +68,13 @@ export function Audit({ project, codebook, excerpts, frozen, reviews, resolution
             <div><dt>Human interpretation frozen</dt><dd>{formatDate(frozen.frozenAt)}</dd></div>
             <div><dt>Reviewer</dt><dd>{reviewerLabel}</dd></div>
             <div><dt>Prompt / rules version</dt><dd>{promptVersion}</dd></div>
+            <div><dt>Output schema version</dt><dd>{schemaVersion}</dd></div>
             <div><dt>Independent review run</dt><dd>{reviewDate ? formatDate(reviewDate) : 'Not recorded'}</dd></div>
             <div><dt>Data destination</dt><dd>{dataDestination}</dd></div>
             {usedOpenAi && <div><dt>Transmission consent</dt><dd>{reviewer?.consent_version ?? 'Not recorded'}</dd></div>}
+            {usedOpenAi && reviewer?.request_id && <div><dt>Client request ID</dt><dd><code>{reviewer.request_id}</code></dd></div>}
+            {usedOpenAi && reviewer?.provider_request_id && <div><dt>Provider request ID</dt><dd><code>{reviewer.provider_request_id}</code></dd></div>}
+            {usedOpenAi && reviewer?.provider_response_id && <div><dt>Provider response ID</dt><dd><code>{reviewer.provider_response_id}</code></dd></div>}
           </dl>
           <div className="withheld-proof"><ShieldCheck /><p><strong>Blind-review boundary recorded</strong>Human codes, rationales, confidence, second-coder decisions, and final conclusions were withheld.</p></div>
         </section>

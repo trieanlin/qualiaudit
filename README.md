@@ -74,7 +74,7 @@ It excludes:
 - all second-coder fields;
 - later resolutions and final conclusions.
 
-An automated test asserts that these human interpretation fields are absent from the serialised browser payload. The optional server endpoint then rebuilds that payload from a second allowlist before any provider request. Extra properties are discarded, and provider output must pass excerpt-ID, codebook, evidence-quote, and schema checks before it is saved. The exported audit bundle records the reviewer, model, prompt/schema version, destination, and consent version.
+An automated test asserts that these human interpretation fields are absent from the serialised browser payload. The optional server endpoint then rebuilds that payload from a second allowlist before any provider request. Extra properties are discarded, and provider output must pass excerpt-ID, codebook, evidence-quote, and schema checks before it is saved. The exported audit bundle records the reviewer, model, named prompt/schema protocol, destination, consent, and safe client/provider request identifiers.
 
 ## Run locally
 
@@ -92,7 +92,7 @@ Open the local URL printed by Vite, normally `http://localhost:5173`.
 
 No environment variable is needed for the deterministic reviewer. To test the optional provider endpoint, set the empty server-only placeholders in `.env` and use Vercel’s local development environment; Vite alone does not run `api/review.ts`.
 
-The provider key must be named `OPENAI_API_KEY`, never `VITE_OPENAI_API_KEY`. `OPENAI_MODEL` and `QUALIAUDIT_ENABLE_REMOTE_REVIEW=true` are also required explicitly, so a stray key cannot activate transmission and audit provenance does not rely on a silent model default. See [Optional real reviewer](docs/REMOTE_REVIEWER.md).
+The provider key must be named `OPENAI_API_KEY`, never `VITE_OPENAI_API_KEY`. `OPENAI_MODEL` and `QUALIAUDIT_ENABLE_REMOTE_REVIEW=true` are also required explicitly, so a stray key cannot activate transmission and audit provenance does not rely on a silent model default. An optional `QUALIAUDIT_REVIEW_TIMEOUT_MS` is clamped to 10–120 seconds; a timeout or provider rate limit never triggers an automatic resend. See [Optional real reviewer](docs/REMOTE_REVIEWER.md).
 
 ## Quality checks
 
@@ -156,7 +156,8 @@ The current prototype does not:
 
 - The deterministic reviewer uses transparent keyword-oriented rules. Its readings demonstrate the review workflow, not model quality.
 - Browser `localStorage` is not suitable for sensitive or regulated research data. Use only fictional or appropriately governed material in the current prototype.
-- The optional provider adapter has an initial secret, consent, allowlist, validation, and size-control boundary, but has not completed a formal threat model or institution-specific governance review.
+- The optional provider adapter has an initial secret, consent, allowlist, validation, size, timeout, and safe-error boundary; these controls do not make transmitted data institutionally approved or suitable for sensitive research.
+- The initial engineering threat model is public, but QualiAudit still has no accounts, durable application-level rate limiting, institution-specific approval, or claim of suitability for sensitive research data.
 - Browser deletion removes QualiAudit’s saved working record, not downloaded files, browser backups, or copies made elsewhere.
 - QualiAudit project files are plain JSON backups, not encrypted containers. They may include excerpts, context, human codes, second-coder judgments, rationales, AI reviews, and decisions; protect them like the underlying research dataset.
 - Delimited-text detection covers comma, semicolon, and tab files, not every locale-specific or proprietary export dialect. Text and Excel imports are limited to 10 MB and 5,000 data rows; formulas are imported as their stored values and encrypted workbooks are unsupported.
@@ -174,6 +175,7 @@ The current prototype does not:
 - [Architecture note](docs/ARCHITECTURE.md)
 - [Research-tool import profiles](docs/IMPORT_PROFILES.md)
 - [Optional real reviewer: security and consent boundary](docs/REMOTE_REVIEWER.md)
+- [Initial threat model and deployment gate](docs/THREAT_MODEL.md)
 - [Browser encryption feasibility](docs/ENCRYPTION_FEASIBILITY.md)
 - [Issue-ready backlog](docs/ISSUE_BACKLOG.md)
 - [Release privacy and secret checklist](docs/RELEASE_CHECKLIST.md)

@@ -10,6 +10,8 @@ All notable changes to QualiAudit are documented here. The project follows [Sema
 - A pre-transmission disclosure covering provider, configured model, region label, retention warning, `store=false`, and exact blind-review fields.
 - Versioned explicit consent, manual local-mock fallback, and no silent retry after an interrupted remote request.
 - Server-side payload re-allowlisting plus strict provider-output, codebook, excerpt-ID, evidence-quote, size, and count validation.
+- A named prompt/schema protocol registry with model, schema, client request, provider request, and provider response provenance in audit exports.
+- Server/browser timeouts, safe provider error classes, bounded rate-limit recovery guidance, and an initial public threat model.
 - Browser-local Excel (`.xlsx`) import for codebooks and human-coded excerpts.
 - Worksheet selection, header-row detection, explicit column mapping, and a four-row source preview.
 - A downloadable fictional two-sheet workbook and an in-app “Try Excel sample” path.

@@ -40,6 +40,21 @@ Discarded even if submitted as extra properties:
 
 The server rejects missing/old consent versions, duplicate excerpt IDs, duplicate code IDs, over-sized requests, unsupported analysis modes, and requests above 50 excerpts or 120 KB of allowlisted JSON.
 
+## Versioned protocol and reproducibility
+
+`reviewerRegistry.ts` is the single registry for the active reviewer prompt and output-schema identity. A registry entry contains the adapter ID, prompt version, schema version, response-format name, and exact instructions. Changing those instructions or the output contract requires a new named entry rather than silently rewriting the meaning of an existing version.
+
+Accepted reviews record:
+
+- configured model;
+- reviewer adapter, prompt, and schema versions;
+- consent version and data destination;
+- analysis timestamp;
+- QualiAudit client request ID;
+- provider request and response IDs when returned.
+
+These fields support audit and troubleshooting. They do not make stochastic model output perfectly reproducible. Deployment owners should deliberately choose and document a model, and use a pinned model snapshot when their provider access and evaluation plan support it.
+
 ## Provider-output validation
 
 The server requests a strict JSON Schema response through the Responses API with `store=false`. Before saving a result, it checks:
@@ -52,6 +67,14 @@ The server requests a strict JSON Schema response through the Responses API with
 
 Invalid provider output fails closed. It is not silently converted into a valid-looking review.
 
+## Operational failure behaviour
+
+The server timeout defaults to 45 seconds and can be configured with `QUALIAUDIT_REVIEW_TIMEOUT_MS`; values are clamped to 10–120 seconds. The browser also has a longer safety timeout so a broken connection does not wait indefinitely.
+
+QualiAudit distinguishes provider throttling, credential/project access errors, provider unavailability, server timeout, endpoint/network failure, and invalid structured output. It returns only safe application messages and support request IDs, never the raw provider error body. A valid `Retry-After` value is bounded to one hour and shown as a disabled retry countdown.
+
+There is no automatic retry. A timeout can have an unknown provider-side outcome, so resending research text and potentially incurring duplicate cost always requires a new human action. The local deterministic reviewer remains available.
+
 ## Configuration
 
 Local secrets belong in an ignored `.env` file:
@@ -61,6 +84,7 @@ OPENAI_API_KEY=
 OPENAI_MODEL=
 QUALIAUDIT_ENABLE_REMOTE_REVIEW=false
 QUALIAUDIT_OPENAI_REGION=
+QUALIAUDIT_REVIEW_TIMEOUT_MS=45000
 ```
 
 `OPENAI_MODEL` is deliberately required rather than silently defaulted, so the recorded audit provenance matches an explicit deployment choice. `QUALIAUDIT_OPENAI_REGION` is only a human-readable disclosure label; actual processing location follows the provider account and deployment configuration.
@@ -77,3 +101,5 @@ In Vercel, add `OPENAI_API_KEY` as a secret environment variable and set `OPENAI
 - The current retry is human initiated. An interrupted request can have an unknown provider-side outcome, so QualiAudit does not silently retry it.
 - The endpoint currently handles at most 50 excerpts per request. Larger reviews need a reviewed batching design that preserves provenance and cost controls.
 - The public synthetic demo should continue using the local mock reviewer unless the maintainer intentionally configures the optional provider.
+
+See the [initial threat model and deployment gate](THREAT_MODEL.md) for assets, trust boundaries, current controls, residual risks, and prerequisites for enabling a billable deployment.
