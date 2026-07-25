@@ -1,4 +1,5 @@
 import readWorkbook, { type CellValue } from 'read-excel-file/browser'
+import { normalizeImportHeader, type ImportProfile } from './importProfiles'
 
 export type SpreadsheetImportKind = 'codebook' | 'excerpts'
 
@@ -61,20 +62,17 @@ export async function readExcelWorkbook(file: File): Promise<WorkbookSheet[]> {
 }
 
 export function normalizeHeader(value: string): string {
-  return value
-    .normalize('NFKC')
-    .trim()
-    .toLowerCase()
-    .replace(/[\s\p{P}\p{S}]+/gu, '')
+  return normalizeImportHeader(value)
 }
 
-export function guessColumnMapping(headers: string[], fields: ImportField[]): ColumnMapping {
+export function guessColumnMapping(headers: string[], fields: ImportField[], profile?: ImportProfile): ColumnMapping {
   const mapping: ColumnMapping = {}
   const usedColumns = new Set<number>()
   const normalizedHeaders = headers.map(normalizeHeader)
 
   fields.forEach((field) => {
-    const aliases = new Set([field.key, ...field.aliases].map(normalizeHeader))
+    const profileAliases = profile?.fieldAliases[field.key] ?? []
+    const aliases = new Set([field.key, ...profileAliases, ...field.aliases].map(normalizeHeader))
     const index = normalizedHeaders.findIndex((header, columnIndex) => !usedColumns.has(columnIndex) && aliases.has(header))
     mapping[field.key] = index >= 0 ? index : ''
     if (index >= 0) usedColumns.add(index)

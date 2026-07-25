@@ -8,6 +8,8 @@ The domain layer remains UI-independent:
 
 - `validation.ts` performs declared rule checks.
 - `csv.ts` detects and strictly parses comma, semicolon, or tab-delimited text before state replacement.
+- `spreadsheet.ts` reads workbook sheets and applies explicit field mappings.
+- `importProfiles.ts` recognises conservative column-label patterns and supplies optional vendor-specific mapping aliases.
 - `reviewer.ts` creates a narrow blind payload and runs the deterministic reviewer.
 - `queue.ts` compares the already-independent reading with the frozen human record.
 - `export.ts` constructs reviewed rows and the non-resumable audit bundle.
@@ -44,6 +46,12 @@ Project files intentionally sit outside the reviewer boundary: they preserve the
 The local-data control reads the already-loaded `ReviewState`, reports counts rather than excerpt content, and removes only the versioned QualiAudit storage key. Returning to an empty landing state does not recreate an empty storage record. Downloaded files are outside the browser-storage lifecycle and are never represented as deleted by this action. Application-managed encryption is deliberately deferred; see [Browser encryption feasibility](ENCRYPTION_FEASIBILITY.md).
 
 Delimited-text parsing is intentionally fail-closed for structural uncertainty: duplicated headers, unclosed quotes, inconsistent row widths, oversized files, and row-limit violations leave the existing review material unchanged. Validation then applies domain rules after parsing. Unicode-normalized identifiers expose visually equivalent duplicate codes without rewriting them; multi-code primary cells block freezing because the current domain model records one primary human code; excerpt overlap is a warning for human segment-boundary review rather than an automatic edit.
+
+Spreadsheet profiles sit before domain validation and alter suggestions only. Detection requires
+several matching column labels, ambiguous matches fall back to manual mapping, and missing required
+fields remain unresolved. The application does not inspect vendor project payloads, infer codes from
+sheet names, or represent a profile match as verified compatibility. See
+[Research-tool import profiles](IMPORT_PROFILES.md).
 
 ## Adding a real reviewer
 

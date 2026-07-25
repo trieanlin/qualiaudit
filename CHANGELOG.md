@@ -20,6 +20,8 @@ All notable changes to QualiAudit are documented here. The project follows [Sema
 - Automatic comma, semicolon, and tab-delimiter detection with UTF-8 BOM and multiline quoted-field support.
 - Safe rejection of duplicated headers, malformed row widths, unclosed quotes, oversized text imports, and unsupported multi-code primary cells.
 - Unicode-normalized code checks, optional second-coder code validation, segment-boundary warnings, and a fictional import regression corpus.
+- Visible, editable import-profile suggestions for selected NVivo codebook/coding-report, MAXQDA retrieved-segment, and ATLAS.ti quotation-report `.xlsx` layouts.
+- Conservative multi-signal profile detection, manual fallback for unresolved fields, explicit native-project boundaries, and a fictional four-sheet interoperability fixture.
 
 ## [0.1.0] - 2026-07-22
 

@@ -65,3 +65,10 @@ These are the first scoped issues to create when the repository receives a GitHu
 **Status:** Complete
 **Outcome:** Researchers receive explicit feedback when common delimited-text structures or coding shapes cannot be represented safely.
 **Acceptance:** Comma, semicolon, tab, UTF-8 BOM, multiline quotes, Unicode identifiers, malformed row widths, duplicate headers, multi-code primary cells, and overlapping segment boundaries have fictional regression fixtures; structural failure never replaces the current material.
+
+## QA-11 — Add transparent research-tool import profiles
+
+**Phase:** Trustworthy import
+**Status:** Complete
+**Outcome:** A researcher importing a selected NVivo, MAXQDA, or ATLAS.ti tabular `.xlsx` export receives a visible, editable column-mapping suggestion without a claim of native integration.
+**Acceptance:** Detection uses several column-label signals; ambiguous or missing fields fall back to human mapping; profile selection never bypasses validation; native project files remain unsupported; a fully fictional multi-sheet workbook tests the recognised shapes and metadata-sheet boundary.

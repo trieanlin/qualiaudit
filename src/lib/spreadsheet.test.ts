@@ -3,6 +3,7 @@
 import { readFile } from 'node:fs/promises'
 import readWorkbook from 'read-excel-file/node'
 import { describe, expect, it } from 'vitest'
+import { detectImportProfile } from './importProfiles'
 import {
   CODEBOOK_IMPORT_FIELDS,
   EXCERPT_IMPORT_FIELDS,
@@ -49,6 +50,45 @@ describe('Excel import mapping', () => {
       human_confidence: 4,
     })
     expect(missingRequiredMappings(mapping, EXCERPT_IMPORT_FIELDS)).toEqual([])
+  })
+
+  it('keeps the fictional research-tool workbook aligned with transparent import profiles', async () => {
+    const workbook = await readFile('test-fixtures/import/synthetic-tool-export-profiles.xlsx')
+    const sheets = await readWorkbook(workbook)
+    const asSheet = (name: string): WorkbookSheet => {
+      const found = sheets.find((sheet) => sheet.sheet === name)
+      if (!found) throw new Error(`Missing fixture sheet: ${name}`)
+      return {
+        name,
+        rows: found.data.map((row) => row.map((cell) => cell === null ? '' : String(cell))),
+      }
+    }
+
+    const atlasSheet = asSheet('ATLAS Quotations')
+    const atlasHeader = suggestHeaderRow(atlasSheet, EXCERPT_IMPORT_FIELDS)
+    const atlasTable = tableFromSheet(atlasSheet, atlasHeader)
+    const atlasProfile = detectImportProfile(atlasTable.headers, 'excerpts')
+    const atlasMapping = guessColumnMapping(atlasTable.headers, EXCERPT_IMPORT_FIELDS, atlasProfile ?? undefined)
+
+    expect(sheets.map((sheet) => sheet.sheet)).toEqual([
+      'Info',
+      'ATLAS Quotations',
+      'MAXQDA Segments',
+      'NVivo Codebook',
+    ])
+    expect(atlasHeader).toBe(2)
+    expect(atlasProfile?.id).toBe('atlasti-quotation-report')
+    expect(missingRequiredMappings(atlasMapping, EXCERPT_IMPORT_FIELDS)).toEqual([])
+
+    const maxqdaSheet = asSheet('MAXQDA Segments')
+    const maxqdaHeader = suggestHeaderRow(maxqdaSheet, EXCERPT_IMPORT_FIELDS)
+    const maxqdaTable = tableFromSheet(maxqdaSheet, maxqdaHeader)
+    expect(detectImportProfile(maxqdaTable.headers, 'excerpts')?.id).toBe('maxqda-retrieved-segments')
+
+    const nvivoSheet = asSheet('NVivo Codebook')
+    const nvivoHeader = suggestHeaderRow(nvivoSheet, CODEBOOK_IMPORT_FIELDS)
+    const nvivoTable = tableFromSheet(nvivoSheet, nvivoHeader)
+    expect(detectImportProfile(nvivoTable.headers, 'codebook')?.id).toBe('nvivo-codebook')
   })
 
   it('preserves optional unmapped fields while building import records', () => {
