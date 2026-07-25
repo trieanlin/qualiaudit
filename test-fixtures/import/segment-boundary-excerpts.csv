@@ -1,0 +1,3 @@
+excerpt_id,source_id,excerpt,context,human_code,human_rationale,human_confidence,second_coder_code,second_coder_rationale
+SYN-BOUNDARY-001,fictional-source-boundary,"This fictional passage is deliberately long enough to test whether overlapping segment boundaries are reported.",Synthetic validation fixture,ROUTINE_FIT,First synthetic segment.,medium,,
+SYN-BOUNDARY-002,fictional-source-boundary,"This fictional passage is deliberately long enough to test whether overlapping segment boundaries are reported. This second row adds another fictional sentence.",Synthetic validation fixture,ROUTINE_FIT,Second synthetic segment.,medium,,

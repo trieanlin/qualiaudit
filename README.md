@@ -31,7 +31,7 @@ The initial audience is qualitative researchers and doctoral researchers working
 The browser-only demo supports a complete synthetic workflow while keeping imported material and saved state on the researcher’s device.
 
 1. Open a clearly labelled fictional home sleep-monitoring project.
-2. Inspect or locally import a CSV/Excel codebook and human first-pass coding.
+2. Inspect or locally import a CSV, TSV, or Excel codebook and human first-pass coding.
 3. Validate required fields, duplicate codes, missing definitions, and missing inclusion/exclusion guidance.
 4. Freeze a time-stamped snapshot of the human interpretation.
 5. Run a local deterministic reviewer on a blind payload.
@@ -105,7 +105,7 @@ npm run check:release
 npm run check
 ```
 
-The test suite covers validation, blind payload construction, deterministic review structure, method-aware queue labels, comparison categories, spreadsheet mapping, the downloadable workbook fixture, versioned project-file recovery, explicit browser-record deletion, and CSV/JSON audit data.
+The test suite covers validation, comma/semicolon/tab-delimited parsing, Unicode and structural import failures, multi-code and segment-boundary diagnostics, blind payload construction, deterministic review structure, method-aware queue labels, comparison categories, spreadsheet mapping, the downloadable workbook fixture, versioned project-file recovery, explicit browser-record deletion, and CSV/JSON audit data.
 
 ## Data and templates
 
@@ -116,7 +116,9 @@ The bundled files under [`public/samples`](public/samples) are fictional and con
 - [`synthetic-qualiaudit-import.xlsx`](public/samples/synthetic-qualiaudit-import.xlsx)
 - blank-shape codebook and coded-excerpt templates
 
-CSV and Excel (`.xlsx`) upload are implemented for codebooks and human-coded excerpts. Excel import includes worksheet selection, header-row detection, explicit column mapping, and a source preview before replacement. Workbook parsing happens in the browser and the demo supports up to 10 MB or 5,000 rows per selected sheet.
+CSV, TSV, and Excel (`.xlsx`) upload are implemented for codebooks and human-coded excerpts. Delimited-text import detects comma, semicolon, or tab structure, preserves quoted multiline and Unicode content, strips a UTF-8 byte-order mark, and rejects duplicated headers, unclosed quotes, or inconsistent row widths before replacing the current record. Excel import includes worksheet selection, header-row detection, explicit column mapping, and a source preview before replacement. Parsing happens in the browser and the demo supports up to 10 MB or 5,000 data rows per text file or selected sheet.
+
+Validation does not silently flatten multiple human codes into one. A primary code cell containing multiple known codebook values becomes a blocking issue, and overlapping excerpts from the same source produce a non-blocking segment-boundary warning. The fictional regression corpus under [`test-fixtures/import`](test-fixtures/import) makes these assumptions inspectable.
 
 Direct export profiles for qualitative research tools remain roadmap items. QualiAudit does not parse proprietary project files.
 
@@ -152,7 +154,8 @@ v0.1 does not:
 - Browser `localStorage` is not suitable for sensitive or regulated research data. Use only fictional or appropriately governed material in v0.1.
 - Browser deletion removes QualiAudit’s saved working record, not downloaded files, browser backups, or copies made elsewhere.
 - QualiAudit project files are plain JSON backups, not encrypted containers. They may include excerpts, context, human codes, second-coder judgments, rationales, AI reviews, and decisions; protect them like the underlying research dataset.
-- CSV parsing covers common quoted CSV but does not yet perform complete dialect detection. Excel import is intentionally limited to `.xlsx`, 10 MB, and 5,000 rows per selected sheet; formulas are imported as their stored values and encrypted workbooks are unsupported.
+- Delimited-text detection covers comma, semicolon, and tab files, not every locale-specific or proprietary export dialect. Text and Excel imports are limited to 10 MB and 5,000 data rows; formulas are imported as their stored values and encrypted workbooks are unsupported.
+- The current first-pass schema accepts one primary human code per excerpt. Multi-code cells are reported for human correction rather than silently flattened.
 - Human decisions after AI exposure may be influenced by automation bias even when the review is blind. QualiAudit records changes; it cannot remove that influence.
 - Descriptive human–AI overlap is not intercoder reliability, methodological validation, or evidence of correctness.
 - The draft methods statement must be adapted to the actual method, model, provider, governance, and institutional requirements.

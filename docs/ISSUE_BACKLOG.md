@@ -58,3 +58,10 @@ These are the first scoped issues to create when the repository receives a GitHu
 **Status:** Complete
 **Outcome:** A researcher can see what QualiAudit retains in the browser and remove the working record without affecting unrelated browser data.
 **Acceptance:** The summary avoids displaying excerpt text; deletion requires confirmation; QualiAudit removes only its versioned key; downloaded-file boundaries and the absence of application-level encryption are explicit and tested.
+
+## QA-10 — Expand the synthetic import validation corpus
+
+**Phase:** Trustworthy import
+**Status:** Complete
+**Outcome:** Researchers receive explicit feedback when common delimited-text structures or coding shapes cannot be represented safely.
+**Acceptance:** Comma, semicolon, tab, UTF-8 BOM, multiline quotes, Unicode identifiers, malformed row widths, duplicate headers, multi-code primary cells, and overlapping segment boundaries have fictional regression fixtures; structural failure never replaces the current material.

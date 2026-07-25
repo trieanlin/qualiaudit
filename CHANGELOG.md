@@ -17,6 +17,9 @@ All notable changes to QualiAudit are documented here. The project follows [Sema
 - A Data & privacy dialog that reports locally retained review counts and approximate size.
 - Confirmed deletion of QualiAudit’s browser record without clearing unrelated local-storage keys.
 - Public encryption-at-rest feasibility guidance and explicit downloaded-file deletion boundaries.
+- Automatic comma, semicolon, and tab-delimiter detection with UTF-8 BOM and multiline quoted-field support.
+- Safe rejection of duplicated headers, malformed row widths, unclosed quotes, oversized text imports, and unsupported multi-code primary cells.
+- Unicode-normalized code checks, optional second-coder code validation, segment-boundary warnings, and a fictional import regression corpus.
 
 ## [0.1.0] - 2026-07-22
 

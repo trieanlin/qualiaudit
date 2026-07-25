@@ -172,6 +172,7 @@ a { color: inherit; }
 .data-table th:first-child, .data-table td:first-child { padding-left: 22px; }
 .code-pill { display: inline-block; padding: 5px 8px; border-radius: 4px; background: #e8ede8; color: #486254; font-size: 9px; font-weight: 750; letter-spacing: .04em; white-space: nowrap; }
 .import-message { display: flex; align-items: center; gap: 7px; padding: 9px 20px; margin: 0; background: #edf2ee; color: var(--sage); font-size: 11px; border-bottom: 1px solid #dce5df; }
+.import-message.error { color: #8b4f45; background: #f6e9e5; border-bottom-color: #e4cfc8; }
 .excerpt-list { padding: 3px 22px; }
 .excerpt-row { padding: 20px 0; border-bottom: 1px solid var(--line); }
 .excerpt-row:last-child { border-bottom: 0; }

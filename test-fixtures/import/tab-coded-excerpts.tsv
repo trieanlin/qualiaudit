@@ -1,0 +1,3 @@
+excerpt_id	source_id	excerpt	context	human_code	human_rationale	human_confidence	second_coder_code	second_coder_rationale
+SYN-TAB-001	fictional-source-tab	"I kept the fictional monitor near the kettle, so it joined my evening routine."	Synthetic context only.	ROUTINE_FIT	The comma belongs to the excerpt, not the table structure.	high		
+SYN-TAB-002	fictional-source-tab	“这是完全虚构的测试片段。”	No real participant information.	PRIVACY_BOUNDARY	Unicode text remains intact.	medium		
