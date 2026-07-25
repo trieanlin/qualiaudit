@@ -108,6 +108,10 @@ export function runMockBlindReview(payload: BlindReviewPayload, reviewedAt = new
       needs_more_context: needsMoreContext,
       ...(issue ? { possible_codebook_issue: issue } : {}),
       reviewer: 'deterministic-mock-v0.1',
+      provider: 'local-mock',
+      model: 'deterministic-mock-v0.1',
+      prompt_version: 'mock-rules-v0.1',
+      data_destination: 'local-browser',
       reviewed_at: reviewedAt,
     }
   })

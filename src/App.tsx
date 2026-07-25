@@ -12,7 +12,8 @@ import { SAMPLE_CODEBOOK, SAMPLE_EXCERPTS, SAMPLE_PROJECT } from './data/sample'
 import { useReviewState } from './hooks/useReviewState'
 import { downloadText } from './lib/export'
 import { projectFileName, serialisePortableProject } from './lib/projectFile'
-import type { AiReview, ProjectBrief, Resolution } from './types'
+import { REMOTE_REVIEW_EXACT_FIELDS, REVIEWER_CONSENT_VERSION } from './lib/reviewerProtocol'
+import type { AiReview, ProjectBrief, Resolution, ReviewerMode } from './types'
 
 function cloneSample() {
   return {
@@ -28,12 +29,34 @@ export default function App() {
 
   const openSample = () => {
     const sample = cloneSample()
-    patchState({ ...sample, view: 'materials', frozen: null, reviews: [], resolutions: [], selectedExcerptId: null })
+    patchState({
+      ...sample,
+      view: 'materials',
+      frozen: null,
+      reviews: [],
+      resolutions: [],
+      selectedExcerptId: null,
+      reviewerMode: 'mock',
+      providerConsent: null,
+      reviewRequestId: null,
+      remoteRequestStarted: false,
+    })
   }
 
   const startSetup = () => {
     const sample = cloneSample()
-    patchState({ ...sample, view: 'setup', frozen: null, reviews: [], resolutions: [], selectedExcerptId: null })
+    patchState({
+      ...sample,
+      view: 'setup',
+      frozen: null,
+      reviews: [],
+      resolutions: [],
+      selectedExcerptId: null,
+      reviewerMode: 'mock',
+      providerConsent: null,
+      reviewRequestId: null,
+      remoteRequestStarted: false,
+    })
   }
 
   const handleReset = () => {
@@ -51,11 +74,12 @@ export default function App() {
     )
   }
 
-  const freeze = () => {
+  const freeze = (reviewerMode: ReviewerMode) => {
     if (!state.project) return
+    const now = new Date().toISOString()
     patchState({
       frozen: {
-        frozenAt: new Date().toISOString(),
+        frozenAt: now,
         project: { ...state.project },
         codebook: state.codebook.map((item) => ({ ...item })),
         humanCoding: state.excerpts.map((item) => ({ ...item })),
@@ -63,6 +87,17 @@ export default function App() {
       reviews: [],
       resolutions: [],
       view: 'reviewing',
+      reviewerMode,
+      providerConsent: reviewerMode === 'openai'
+        ? {
+            version: REVIEWER_CONSENT_VERSION,
+            provider: 'openai',
+            grantedAt: now,
+            exactFields: [...REMOTE_REVIEW_EXACT_FIELDS],
+          }
+        : null,
+      reviewRequestId: crypto.randomUUID(),
+      remoteRequestStarted: false,
     })
   }
 
@@ -152,6 +187,17 @@ export default function App() {
           project={state.frozen.project}
           codebook={state.frozen.codebook}
           excerpts={state.frozen.humanCoding}
+          reviewerMode={state.reviewerMode}
+          consent={state.providerConsent}
+          requestId={state.reviewRequestId}
+          remoteRequestStarted={state.remoteRequestStarted}
+          onRemoteStart={() => patchState({ remoteRequestStarted: true })}
+          onPrepareRetry={() => patchState({ remoteRequestStarted: false })}
+          onUseLocalFallback={() => patchState({
+            reviewerMode: 'mock',
+            providerConsent: null,
+            remoteRequestStarted: false,
+          })}
           onDone={completeReview}
         />
       )}

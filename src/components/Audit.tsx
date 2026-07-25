@@ -27,9 +27,16 @@ export function Audit({ project, codebook, excerpts, frozen, reviews, resolution
   const rows = buildReviewedRows(excerpts, reviews, resolutions)
   const bundle = buildAuditBundle({ project, codebook, excerpts, frozen, reviews, resolutions })
   const reviewDate = reviews[0]?.reviewed_at
+  const reviewer = reviews[0]
+  const usedOpenAi = reviewer?.provider === 'openai'
+  const reviewerLabel = usedOpenAi
+    ? `${reviewer.model ?? 'configured model'} via OpenAI API`
+    : reviewer?.model ?? reviewer?.reviewer ?? 'not run'
+  const promptVersion = reviewer?.prompt_version ?? (usedOpenAi ? 'not recorded' : 'mock-rules-v0.1')
+  const dataDestination = usedOpenAi ? 'OpenAI API via server endpoint' : 'Local browser only'
   const methodStatement = project.analysisMode === 'reflexive'
-    ? `We used QualiAudit to support reflexive engagement with an independently generated AI reading of ${excerpts.length} fictional coded excerpts. Human first-pass interpretations were frozen before review and withheld from the deterministic mock reviewer. Divergence was treated as a prompt for reflexivity rather than an error or accuracy measure. Researchers retained final interpretive authority and documented post-exposure decisions in an audit log.`
-    : `We used QualiAudit to compare human first-pass coding with an independently generated AI reading of ${excerpts.length} fictional coded excerpts. Human codes and rationales were frozen and withheld from the deterministic mock reviewer. Descriptive overlap and divergence were used to prioritise human review, not as validation or intercoder reliability. Researchers retained final decision authority and documented post-exposure decisions in an audit log.`
+    ? `We used QualiAudit to support reflexive engagement with an independently generated AI reading of ${excerpts.length} coded excerpts. Human first-pass interpretations were frozen before review and withheld from ${usedOpenAi ? `the ${reviewer?.model ?? 'configured OpenAI'} reviewer` : 'the deterministic local mock reviewer'}. Divergence was treated as a prompt for reflexivity rather than an error or accuracy measure. Researchers retained final interpretive authority and documented post-exposure decisions in an audit log.`
+    : `We used QualiAudit to compare human first-pass coding with an independently generated AI reading of ${excerpts.length} coded excerpts. Human codes and rationales were frozen and withheld from ${usedOpenAi ? `the ${reviewer?.model ?? 'configured OpenAI'} reviewer` : 'the deterministic local mock reviewer'}. Descriptive overlap and divergence were used to prioritise human review, not as validation or intercoder reliability. Researchers retained final decision authority and documented post-exposure decisions in an audit log.`
 
   return (
     <div className="page wide-page audit-page">
@@ -58,10 +65,11 @@ export function Audit({ project, codebook, excerpts, frozen, reviews, resolution
           <div className="card-heading"><LockKeyhole /><div><span className="overline">REVIEW PROVENANCE</span><h2>What happened, and when</h2></div></div>
           <dl className="provenance-list">
             <div><dt>Human interpretation frozen</dt><dd>{formatDate(frozen.frozenAt)}</dd></div>
-            <div><dt>Reviewer</dt><dd>deterministic-mock-v0.1</dd></div>
-            <div><dt>Prompt / rules version</dt><dd>mock-rules-v0.1</dd></div>
+            <div><dt>Reviewer</dt><dd>{reviewerLabel}</dd></div>
+            <div><dt>Prompt / rules version</dt><dd>{promptVersion}</dd></div>
             <div><dt>Independent review run</dt><dd>{reviewDate ? formatDate(reviewDate) : 'Not recorded'}</dd></div>
-            <div><dt>Data destination</dt><dd>Local browser only</dd></div>
+            <div><dt>Data destination</dt><dd>{dataDestination}</dd></div>
+            {usedOpenAi && <div><dt>Transmission consent</dt><dd>{reviewer?.consent_version ?? 'Not recorded'}</dd></div>}
           </dl>
           <div className="withheld-proof"><ShieldCheck /><p><strong>Blind-review boundary recorded</strong>Human codes, rationales, confidence, second-coder decisions, and final conclusions were withheld.</p></div>
         </section>
@@ -104,7 +112,14 @@ export function Audit({ project, codebook, excerpts, frozen, reviews, resolution
 
       <section className="limitations-note">
         <Info />
-        <div><strong>Interpret this report with care.</strong><p>The mock reviewer is deterministic and keyword-oriented. It does not validate qualitative findings, replace a second human coder, or establish correctness. This synthetic review demonstrates workflow and auditability only.</p></div>
+        <div>
+          <strong>Interpret this report with care.</strong>
+          <p>
+            {usedOpenAi
+              ? 'The model reading does not validate qualitative findings, replace a second human coder, or establish correctness. Check provider output, governance, and the recorded evidence before drawing conclusions.'
+              : 'The mock reviewer is deterministic and keyword-oriented. It does not validate qualitative findings, replace a second human coder, or establish correctness. This synthetic review demonstrates workflow and auditability only.'}
+          </p>
+        </div>
       </section>
     </div>
   )

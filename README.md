@@ -10,7 +10,7 @@ It is closer to a pull request for qualitative analysis than an automated coding
 
 [Open the QualiAudit synthetic demo](https://qualiaudit-beta.vercel.app)
 
-The demo uses fictional data, runs entirely in the browser, and does not require an account or API key.
+The demo uses fictional data and defaults to a reviewer that runs entirely in the browser, without an account or API key. An optional real-model adapter is unavailable unless a maintainer deliberately configures it server-side.
 
 ![QualiAudit review queue](docs/screenshots/review-queue.jpg)
 
@@ -34,7 +34,7 @@ The browser-only demo supports a complete synthetic workflow while keeping impor
 2. Inspect or locally import a CSV, TSV, or Excel codebook and human first-pass coding.
 3. Validate required fields, duplicate codes, missing definitions, and missing inclusion/exclusion guidance.
 4. Freeze a time-stamped snapshot of the human interpretation.
-5. Run a local deterministic reviewer on a blind payload.
+5. Choose the no-transmission local reviewer, or review an explicit provider disclosure and consent to an optional server-side reviewer.
 6. Prioritise divergence, ambiguity, missing context, segment boundaries, and confidence cases.
 7. Record one of nine human resolution decisions with a required rationale.
 8. Inspect the decision log and reviewer provenance.
@@ -42,7 +42,7 @@ The browser-only demo supports a complete synthetic workflow while keeping impor
 10. Save a versioned QualiAudit project file and restore the same review in another browser session.
 11. Inspect the locally retained record and explicitly delete it from the browser.
 
-Working state is saved in browser `localStorage`. **Data & privacy** shows the saved project, stage, record counts, and approximate size; deletion removes QualiAudit’s own browser record after confirmation without clearing unrelated site data. A resumable `.qualiaudit.json` project file can be downloaded explicitly; it contains the full review state, including human judgments and decision history. No account, API key, server, or third-party model is used by the sample.
+Working state is saved in browser `localStorage`. **Data & privacy** shows the saved project, stage, record counts, and approximate size; deletion removes QualiAudit’s own browser record after confirmation without clearing unrelated site data. A resumable `.qualiaudit.json` project file can be downloaded explicitly; it contains the full review state, including human judgments and decision history. The sample’s default path uses no account, API key, backend review call, or third-party model.
 
 ## Method-aware behaviour
 
@@ -74,7 +74,7 @@ It excludes:
 - all second-coder fields;
 - later resolutions and final conclusions.
 
-An automated test asserts that these human interpretation fields are absent from the serialised payload. The exported audit bundle also records the boundary.
+An automated test asserts that these human interpretation fields are absent from the serialised browser payload. The optional server endpoint then rebuilds that payload from a second allowlist before any provider request. Extra properties are discarded, and provider output must pass excerpt-ID, codebook, evidence-quote, and schema checks before it is saved. The exported audit bundle records the reviewer, model, prompt/schema version, destination, and consent version.
 
 ## Run locally
 
@@ -90,7 +90,9 @@ npm run dev
 
 Open the local URL printed by Vite, normally `http://localhost:5173`.
 
-No environment variable is needed for the deterministic reviewer. `.env.example` reserves future server-side model configuration without putting a key in frontend code.
+No environment variable is needed for the deterministic reviewer. To test the optional provider endpoint, set the empty server-only placeholders in `.env` and use Vercel’s local development environment; Vite alone does not run `api/review.ts`.
+
+The provider key must be named `OPENAI_API_KEY`, never `VITE_OPENAI_API_KEY`. `OPENAI_MODEL` and `QUALIAUDIT_ENABLE_REMOTE_REVIEW=true` are also required explicitly, so a stray key cannot activate transmission and audit provenance does not rely on a silent model default. See [Optional real reviewer](docs/REMOTE_REVIEWER.md).
 
 ## Quality checks
 
@@ -105,7 +107,7 @@ npm run check:release
 npm run check
 ```
 
-The test suite covers validation, comma/semicolon/tab-delimited parsing, Unicode and structural import failures, multi-code and segment-boundary diagnostics, blind payload construction, deterministic review structure, method-aware queue labels, comparison categories, spreadsheet and research-tool profile mapping, fictional workbook fixtures, versioned project-file recovery, explicit browser-record deletion, and CSV/JSON audit data.
+The test suite covers validation, comma/semicolon/tab-delimited parsing, Unicode and structural import failures, multi-code and segment-boundary diagnostics, blind payload construction, deterministic review structure, explicit provider consent, server-side payload re-allowlisting, strict provider-output checks, method-aware queue labels, comparison categories, spreadsheet and research-tool profile mapping, fictional workbook fixtures, versioned project-file recovery, explicit browser-record deletion, and CSV/JSON audit data.
 
 ## Data and templates
 
@@ -131,7 +133,7 @@ The **Data & privacy** action makes automatic browser retention visible and offe
 ## Technology choices
 
 - **React + TypeScript** keep the stateful review flow explicit and typed while remaining familiar to open-source contributors.
-- **Vite** provides a fast, small, reproducible frontend build without prescribing a backend.
+- **Vite** provides a fast, small, reproducible frontend build; a narrowly scoped Vercel serverless function contains the optional provider boundary.
 - **Plain CSS** keeps the visual system inspectable and avoids locking an early research product into a component framework.
 - **Vitest + Testing Library** support fast unit and interaction-oriented testing in the same TypeScript toolchain.
 - **read-excel-file** provides a narrowly scoped, browser-compatible `.xlsx` parser without introducing a server or exposing imported files to a third party.
@@ -141,19 +143,20 @@ The dependency lockfile is committed; use `npm ci` for reproducible installation
 
 ## What QualiAudit is not
 
-v0.1 does not:
+The current prototype does not:
 
 - generate final themes or perform full-text autonomous analysis;
 - replace a second human coder or validate that research findings are correct;
 - parse native NVivo, MAXQDA, or ATLAS.ti project files;
 - transcribe audio or video;
 - provide multi-user collaboration, accounts, payments, or a research-data cloud;
-- send the public synthetic demo to a model provider.
+- silently send the public synthetic demo to a model provider.
 
 ## Important limitations
 
 - The deterministic reviewer uses transparent keyword-oriented rules. Its readings demonstrate the review workflow, not model quality.
-- Browser `localStorage` is not suitable for sensitive or regulated research data. Use only fictional or appropriately governed material in v0.1.
+- Browser `localStorage` is not suitable for sensitive or regulated research data. Use only fictional or appropriately governed material in the current prototype.
+- The optional provider adapter has an initial secret, consent, allowlist, validation, and size-control boundary, but has not completed a formal threat model or institution-specific governance review.
 - Browser deletion removes QualiAudit’s saved working record, not downloaded files, browser backups, or copies made elsewhere.
 - QualiAudit project files are plain JSON backups, not encrypted containers. They may include excerpts, context, human codes, second-coder judgments, rationales, AI reviews, and decisions; protect them like the underlying research dataset.
 - Delimited-text detection covers comma, semicolon, and tab files, not every locale-specific or proprietary export dialect. Text and Excel imports are limited to 10 MB and 5,000 data rows; formulas are imported as their stored values and encrypted workbooks are unsupported.
@@ -170,6 +173,7 @@ v0.1 does not:
 - [Security and research-data guidance](SECURITY.md)
 - [Architecture note](docs/ARCHITECTURE.md)
 - [Research-tool import profiles](docs/IMPORT_PROFILES.md)
+- [Optional real reviewer: security and consent boundary](docs/REMOTE_REVIEWER.md)
 - [Browser encryption feasibility](docs/ENCRYPTION_FEASIBILITY.md)
 - [Issue-ready backlog](docs/ISSUE_BACKLOG.md)
 - [Release privacy and secret checklist](docs/RELEASE_CHECKLIST.md)

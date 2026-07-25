@@ -19,6 +19,7 @@ These are the first scoped issues to create when the repository receives a GitHu
 ## QA-03 — Add a server-side reviewer adapter with transmission consent
 
 **Phase:** Optional real reviewer  
+**Status:** Complete
 **Outcome:** A researcher can opt into a real model only after seeing the provider and exact outbound fields.  
 **Acceptance:** Keys are server-side; cancelled consent sends nothing; mock fallback remains available; model/prompt/schema versions and provider disclosure appear in exports; human fields remain absent from the payload.
 

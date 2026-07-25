@@ -13,6 +13,10 @@ function savedState(): ReviewState {
     reviews: [],
     resolutions: [],
     selectedExcerptId: null,
+    reviewerMode: 'mock',
+    providerConsent: null,
+    reviewRequestId: null,
+    remoteRequestStarted: false,
   }
 }
 

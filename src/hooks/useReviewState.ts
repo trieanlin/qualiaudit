@@ -6,7 +6,9 @@ import type {
   FrozenSnapshot,
   HumanCodedExcerpt,
   ProjectBrief,
+  ProviderConsent,
   Resolution,
+  ReviewerMode,
 } from '../types'
 
 export const STORAGE_KEY = 'qualiaudit-review-state-v0.1'
@@ -20,6 +22,10 @@ export interface ReviewState {
   reviews: AiReview[]
   resolutions: Resolution[]
   selectedExcerptId: string | null
+  reviewerMode: ReviewerMode
+  providerConsent: ProviderConsent | null
+  reviewRequestId: string | null
+  remoteRequestStarted: boolean
 }
 
 export const INITIAL_STATE: ReviewState = {
@@ -31,12 +37,25 @@ export const INITIAL_STATE: ReviewState = {
   reviews: [],
   resolutions: [],
   selectedExcerptId: null,
+  reviewerMode: 'mock',
+  providerConsent: null,
+  reviewRequestId: null,
+  remoteRequestStarted: false,
 }
 
 function readStoredState(): ReviewState {
   try {
     const stored = localStorage.getItem(STORAGE_KEY)
-    return stored ? (JSON.parse(stored) as ReviewState) : INITIAL_STATE
+    if (!stored) return INITIAL_STATE
+    const parsed = JSON.parse(stored) as Partial<ReviewState>
+    return {
+      ...INITIAL_STATE,
+      ...parsed,
+      reviewerMode: parsed.reviewerMode === 'openai' ? 'openai' : 'mock',
+      providerConsent: parsed.providerConsent ?? null,
+      reviewRequestId: parsed.reviewRequestId ?? null,
+      remoteRequestStarted: parsed.remoteRequestStarted === true,
+    }
   } catch {
     return INITIAL_STATE
   }

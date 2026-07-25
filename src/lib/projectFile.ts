@@ -7,9 +7,12 @@ import type {
   FrozenSnapshot,
   HumanCodedExcerpt,
   ProjectBrief,
+  ProviderConsent,
   Resolution,
   ResolutionDecision,
+  ReviewerMode,
 } from '../types'
+import { REVIEWER_CONSENT_VERSION } from './reviewerProtocol'
 
 export const PROJECT_FILE_FORMAT = 'qualiaudit-project'
 export const PROJECT_FILE_SCHEMA_VERSION = 1
@@ -141,11 +144,23 @@ function parseReview(value: unknown, index: number): AiReview {
   if (!CONFIDENCE_VALUES.has(uncertainty as Confidence)) {
     throw new ProjectFileError(`${label} has an unsupported uncertainty value.`)
   }
-  if (item.reviewer !== 'deterministic-mock-v0.1') {
+  if (item.reviewer !== 'deterministic-mock-v0.1' && item.reviewer !== 'openai-responses-v0.2') {
     throw new ProjectFileError(`${label} uses an unsupported reviewer version.`)
   }
   if (typeof item.needs_more_context !== 'boolean') {
     throw new ProjectFileError(`${label} needs_more_context must be true or false.`)
+  }
+  const provider = optionalText(item.provider, `${label} provider`)
+  if (provider && provider !== 'local-mock' && provider !== 'openai') {
+    throw new ProjectFileError(`${label} uses an unsupported provider.`)
+  }
+  const destination = optionalText(item.data_destination, `${label} data destination`)
+  if (destination && destination !== 'local-browser' && destination !== 'openai-api') {
+    throw new ProjectFileError(`${label} uses an unsupported data destination.`)
+  }
+  const consentVersion = optionalText(item.consent_version, `${label} consent version`)
+  if (consentVersion && consentVersion !== REVIEWER_CONSENT_VERSION) {
+    throw new ProjectFileError(`${label} uses an unsupported consent version.`)
   }
   return {
     excerpt_id: text(item.excerpt_id, `${label} excerpt ID`),
@@ -157,7 +172,29 @@ function parseReview(value: unknown, index: number): AiReview {
     needs_more_context: item.needs_more_context,
     possible_codebook_issue: optionalText(item.possible_codebook_issue, `${label} codebook issue`),
     reviewer: item.reviewer,
+    provider: provider as AiReview['provider'],
+    model: optionalText(item.model, `${label} model`),
+    prompt_version: optionalText(item.prompt_version, `${label} prompt version`),
+    data_destination: destination as AiReview['data_destination'],
+    consent_version: consentVersion as AiReview['consent_version'],
     reviewed_at: isoDate(item.reviewed_at, `${label} review date`),
+  }
+}
+
+function parseProviderConsent(value: unknown): ProviderConsent | null {
+  if (value == null) return null
+  const item = record(value, 'Provider consent')
+  if (item.version !== REVIEWER_CONSENT_VERSION || item.provider !== 'openai') {
+    throw new ProjectFileError('Provider consent uses an unsupported version or provider.')
+  }
+  if (!Array.isArray(item.exactFields) || item.exactFields.some((field) => typeof field !== 'string')) {
+    throw new ProjectFileError('Provider consent must record the exact fields disclosed.')
+  }
+  return {
+    version: REVIEWER_CONSENT_VERSION,
+    provider: 'openai',
+    grantedAt: isoDate(item.grantedAt, 'Provider consent date'),
+    exactFields: item.exactFields.map((field) => text(field, 'Provider consent field')),
   }
 }
 
@@ -207,6 +244,10 @@ function parseState(value: unknown): ReviewState {
   const rawView = text(item.view, 'Saved view')
   if (!APP_VIEWS.has(rawView as AppView)) throw new ProjectFileError('The saved view is not supported.')
   const selectedExcerptId = item.selectedExcerptId == null ? null : text(item.selectedExcerptId, 'Selected excerpt ID')
+  const reviewerMode: ReviewerMode = item.reviewerMode === 'openai' ? 'openai' : 'mock'
+  const providerConsent = parseProviderConsent(item.providerConsent)
+  const reviewRequestId = item.reviewRequestId == null ? null : text(item.reviewRequestId, 'Review request ID')
+  const remoteRequestStarted = item.remoteRequestStarted === true
 
   uniqueIds(codebook.map((row) => row.code), 'Codebook')
   uniqueIds(excerpts.map((row) => row.excerpt_id), 'Human-coded excerpts')
@@ -236,6 +277,10 @@ function parseState(value: unknown): ReviewState {
     reviews,
     resolutions,
     selectedExcerptId,
+    reviewerMode,
+    providerConsent,
+    reviewRequestId,
+    remoteRequestStarted,
   }
   parsed.view = resumeView(parsed)
   if (parsed.view !== 'case' || !selectedExcerptId || !activeExcerptIds.has(selectedExcerptId)) {

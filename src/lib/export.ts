@@ -74,8 +74,10 @@ export function buildAuditBundle(args: {
   resolutions: Resolution[]
 }) {
   const { project, codebook, excerpts, frozen, reviews, resolutions } = args
+  const firstReview = reviews[0]
+  const usedOpenAi = firstReview?.provider === 'openai'
   return {
-    schema_version: 'qualiaudit-audit-v0.1',
+    schema_version: 'qualiaudit-audit-v0.2',
     exported_at: new Date().toISOString(),
     project,
     methodological_safeguards: {
@@ -92,10 +94,14 @@ export function buildAuditBundle(args: {
       ai_has_final_decision_authority: false,
     },
     reviewer: {
-      provider: 'local deterministic mock — no data sent to a third party',
-      model: reviews[0]?.reviewer ?? 'not run',
-      prompt_version: 'mock-rules-v0.1',
-      analysis_date: reviews[0]?.reviewed_at ?? null,
+      provider: usedOpenAi ? 'OpenAI API via QualiAudit server endpoint' : 'local deterministic mock — no data sent to a third party',
+      model: firstReview?.model ?? firstReview?.reviewer ?? 'not run',
+      reviewer_adapter: firstReview?.reviewer ?? 'not run',
+      prompt_version: firstReview?.prompt_version ?? (usedOpenAi ? 'not recorded' : 'mock-rules-v0.1'),
+      analysis_date: firstReview?.reviewed_at ?? null,
+      data_destination: firstReview?.data_destination ?? (usedOpenAi ? 'openai-api' : 'local-browser'),
+      transmission_consent_version: firstReview?.consent_version ?? null,
+      responses_store_requested: usedOpenAi ? false : null,
     },
     codebook,
     reviewed_coding_table: buildReviewedRows(excerpts, reviews, resolutions),
