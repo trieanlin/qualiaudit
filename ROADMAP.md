@@ -17,7 +17,7 @@ This roadmap treats product, methodological, governance, and engineering work as
 - [ ] Import profiles for common NVivo/MAXQDA/ATLAS.ti tabular exports, without parsing proprietary project files.
 - [x] In-browser project file export/import so reviews can move between devices without a cloud account.
 - [x] Clear local-data deletion and encrypted-at-rest feasibility study.
-- [ ] Larger validation corpus covering CSV dialects, Unicode, multi-code cells, and segment boundaries.
+- [x] Larger validation corpus covering CSV dialects, Unicode, multi-code cells, and segment boundaries.
 
 ## Phase 2 — optional real reviewer adapter
 

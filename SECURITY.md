@@ -10,7 +10,7 @@ Until a dedicated private reporting channel is configured, do not post participa
 
 ## Data boundary in v0.1
 
-The bundled demo uses fictional data and sends no excerpts to a model provider or application backend. CSV, Excel, and QualiAudit project files are parsed in the browser; imported content is not uploaded by QualiAudit. Project state is stored in browser `localStorage`. This is convenient, not secure research-data storage: other users or software with access to the same browser profile may be able to read it.
+The bundled demo uses fictional data and sends no excerpts to a model provider or application backend. CSV, TSV, Excel, and QualiAudit project files are parsed in the browser; imported content is not uploaded by QualiAudit. Project state is stored in browser `localStorage`. This is convenient, not secure research-data storage: other users or software with access to the same browser profile may be able to read it.
 
 The in-app **Data & privacy** control reports whether QualiAudit has a saved review and can delete its browser-storage key after confirmation. It does not call `localStorage.clear()` and therefore does not deliberately remove unrelated site records. It also cannot remove downloaded files, device or browser backups, synced copies, screenshots, or exports stored elsewhere. Those copies must be governed and deleted separately.
 

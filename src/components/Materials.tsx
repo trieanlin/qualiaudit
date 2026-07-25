@@ -1,7 +1,7 @@
 import { ArrowRight, Check, CircleAlert, Download, FileSpreadsheet, Info, Upload } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
 import { SAMPLE_NOTICE } from '../data/sample'
-import { parseCsv } from '../lib/csv'
+import { DelimitedTextError, parseDelimitedText } from '../lib/csv'
 import type { MappedImportRow, SpreadsheetImportKind } from '../lib/spreadsheet'
 import { validateCodebook, validateExcerpts } from '../lib/validation'
 import type { CodeDefinition, Confidence, HumanCodedExcerpt } from '../types'
@@ -14,6 +14,13 @@ interface MaterialsProps {
   onChangeExcerpts: (rows: HumanCodedExcerpt[]) => void
   onContinue: () => void
   locked?: boolean
+}
+
+const MAX_TEXT_IMPORT_BYTES = 10 * 1024 * 1024
+
+interface ImportMessage {
+  kind: 'success' | 'error'
+  text: string
 }
 
 function readTextFile(file: File): Promise<string> {
@@ -56,7 +63,7 @@ function excerptRows(rows: MappedImportRow[]): HumanCodedExcerpt[] {
 
 export function Materials({ codebook, excerpts, onChangeCodebook, onChangeExcerpts, onContinue, locked = false }: MaterialsProps) {
   const [tab, setTab] = useState<'codebook' | 'coding'>('codebook')
-  const [importMessage, setImportMessage] = useState('')
+  const [importMessage, setImportMessage] = useState<ImportMessage | null>(null)
   const [spreadsheetImport, setSpreadsheetImport] = useState<{ file: File; kind: SpreadsheetImportKind; sample?: boolean } | null>(null)
   const codebookInput = useRef<HTMLInputElement>(null)
   const excerptsInput = useRef<HTMLInputElement>(null)
@@ -72,9 +79,21 @@ export function Materials({ codebook, excerpts, onChangeCodebook, onChangeExcerp
       setSpreadsheetImport({ file, kind: 'codebook' })
       return
     }
-    const rows = codebookRows(parseCsv(await readTextFile(file)))
-    onChangeCodebook(rows)
-    setImportMessage(`Imported ${rows.length} codebook rows from ${file.name}.`)
+    try {
+      if (file.size > MAX_TEXT_IMPORT_BYTES) throw new DelimitedTextError('Delimited-text imports are limited to 10 MB.')
+      const parsed = parseDelimitedText(await readTextFile(file))
+      const rows = codebookRows(parsed.rows)
+      onChangeCodebook(rows)
+      setImportMessage({
+        kind: 'success',
+        text: `Imported ${rows.length} codebook rows from ${file.name} (${parsed.delimiterLabel}-delimited).`,
+      })
+    } catch (error) {
+      setImportMessage({
+        kind: 'error',
+        text: error instanceof Error ? error.message : 'The selected text file could not be read.',
+      })
+    }
   }
 
   const importExcerpts = async (file?: File) => {
@@ -83,9 +102,21 @@ export function Materials({ codebook, excerpts, onChangeCodebook, onChangeExcerp
       setSpreadsheetImport({ file, kind: 'excerpts' })
       return
     }
-    const rows = excerptRows(parseCsv(await readTextFile(file)))
-    onChangeExcerpts(rows)
-    setImportMessage(`Imported ${rows.length} coded excerpts from ${file.name}.`)
+    try {
+      if (file.size > MAX_TEXT_IMPORT_BYTES) throw new DelimitedTextError('Delimited-text imports are limited to 10 MB.')
+      const parsed = parseDelimitedText(await readTextFile(file))
+      const rows = excerptRows(parsed.rows)
+      onChangeExcerpts(rows)
+      setImportMessage({
+        kind: 'success',
+        text: `Imported ${rows.length} coded excerpts from ${file.name} (${parsed.delimiterLabel}-delimited).`,
+      })
+    } catch (error) {
+      setImportMessage({
+        kind: 'error',
+        text: error instanceof Error ? error.message : 'The selected text file could not be read.',
+      })
+    }
   }
 
   const importSpreadsheetRows = (rows: MappedImportRow[], source: string) => {
@@ -93,11 +124,11 @@ export function Materials({ codebook, excerpts, onChangeCodebook, onChangeExcerp
     if (spreadsheetImport.kind === 'codebook') {
       const importedRows = codebookRows(rows)
       onChangeCodebook(importedRows)
-      setImportMessage(`Imported ${importedRows.length} codebook rows from ${source}.`)
+      setImportMessage({ kind: 'success', text: `Imported ${importedRows.length} codebook rows from ${source}.` })
     } else {
       const importedRows = excerptRows(rows)
       onChangeExcerpts(importedRows)
-      setImportMessage(`Imported ${importedRows.length} coded excerpts from ${source}.`)
+      setImportMessage({ kind: 'success', text: `Imported ${importedRows.length} coded excerpts from ${source}.` })
     }
     setSpreadsheetImport(null)
   }
@@ -111,7 +142,7 @@ export function Materials({ codebook, excerpts, onChangeCodebook, onChangeExcerp
       })
       setSpreadsheetImport({ file, kind: tab === 'codebook' ? 'codebook' : 'excerpts', sample: true })
     } catch {
-      setImportMessage('The Excel sample could not be opened. You can still import a local CSV or .xlsx file.')
+      setImportMessage({ kind: 'error', text: 'The Excel sample could not be opened. You can still import a local CSV, TSV, or .xlsx file.' })
     }
   }
 
@@ -131,7 +162,7 @@ export function Materials({ codebook, excerpts, onChangeCodebook, onChangeExcerp
         </div>
       </div>
 
-      <div className="notice-bar"><Info size={17} /><strong>{SAMPLE_NOTICE}</strong><span>Replace it with a CSV or .xlsx workbook when you are ready to test your own structure locally.</span></div>
+      <div className="notice-bar"><Info size={17} /><strong>{SAMPLE_NOTICE}</strong><span>Replace it with a CSV, TSV, or .xlsx workbook when you are ready to test your own structure locally.</span></div>
       {locked && <div className="locked-notice"><span>Frozen record</span>These materials are read-only. They are the exact snapshot used for the independent review.</div>}
 
       <div className="material-tabs" role="tablist" aria-label="Review materials">
@@ -157,14 +188,14 @@ export function Materials({ codebook, excerpts, onChangeCodebook, onChangeExcerp
               <FileSpreadsheet size={16} /> Try Excel sample
             </button>
             <button className="button secondary compact" type="button" disabled={locked} onClick={() => (tab === 'codebook' ? codebookInput : excerptsInput).current?.click()}>
-              <Upload size={16} /> Import CSV / Excel
+              <Upload size={16} /> Import CSV / TSV / Excel
             </button>
-            <input ref={codebookInput} hidden type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={(event) => void importCodebook(event.target.files?.[0])} />
-            <input ref={excerptsInput} hidden type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={(event) => void importExcerpts(event.target.files?.[0])} />
+            <input ref={codebookInput} hidden type="file" accept=".csv,.tsv,.xlsx,text/csv,text/tab-separated-values,text/plain,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={(event) => void importCodebook(event.target.files?.[0])} />
+            <input ref={excerptsInput} hidden type="file" accept=".csv,.tsv,.xlsx,text/csv,text/tab-separated-values,text/plain,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={(event) => void importExcerpts(event.target.files?.[0])} />
           </div>
         </div>
 
-        {importMessage && <p className="import-message"><FileSpreadsheet size={16} /> {importMessage}</p>}
+        {importMessage && <p className={`import-message ${importMessage.kind}`}><FileSpreadsheet size={16} /> {importMessage.text}</p>}
 
         {tab === 'codebook' ? (
           <div className="table-scroll">

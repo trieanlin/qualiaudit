@@ -1,0 +1,2 @@
+excerpt_id,source_id,excerpt,context,human_code,human_rationale,human_confidence,second_coder_code,second_coder_rationale
+SYN-MULTI-001,fictional-source-multi,"This fictional excerpt mentions both routine and privacy.",Synthetic validation fixture,"ROUTINE_FIT; PRIVACY_BOUNDARY",Two primary codes were exported in one cell.,medium,,

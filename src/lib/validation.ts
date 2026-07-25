@@ -4,6 +4,26 @@ function isBlank(value: unknown): boolean {
   return typeof value !== 'string' || value.trim().length === 0
 }
 
+function normalizeIdentifier(value: string): string {
+  return value.normalize('NFKC').trim().toLocaleLowerCase('en')
+}
+
+function normalizeExcerpt(value: string): string {
+  return value.normalize('NFKC').replace(/\s+/g, ' ').trim().toLocaleLowerCase('en')
+}
+
+function detectedKnownCodes(value: string, validCodes: Map<string, string>): string[] {
+  const separators = [/\s*(?:;|\||\r?\n)\s*/, /\s*,\s*/]
+
+  for (const separator of separators) {
+    const candidates = value.split(separator).filter(Boolean)
+    if (candidates.length > 1 && candidates.every((candidate) => validCodes.has(normalizeIdentifier(candidate)))) {
+      return candidates.map((candidate) => validCodes.get(normalizeIdentifier(candidate)) ?? candidate)
+    }
+  }
+  return []
+}
+
 export function validateCodebook(rows: CodeDefinition[]): ValidationIssue[] {
   const issues: ValidationIssue[] = []
   const seen = new Map<string, number>()
@@ -21,7 +41,7 @@ export function validateCodebook(rows: CodeDefinition[]): ValidationIssue[] {
       }
     })
 
-    const normalizedCode = row.code.trim().toLowerCase()
+    const normalizedCode = normalizeIdentifier(row.code)
     if (normalizedCode) {
       const firstRow = seen.get(normalizedCode)
       if (firstRow) {
@@ -43,7 +63,9 @@ export function validateCodebook(rows: CodeDefinition[]): ValidationIssue[] {
 export function validateExcerpts(rows: HumanCodedExcerpt[], codebook: CodeDefinition[]): ValidationIssue[] {
   const issues: ValidationIssue[] = []
   const validCodes = new Set(codebook.map((item) => item.code))
+  const normalizedCodes = new Map(codebook.map((item) => [normalizeIdentifier(item.code), item.code]))
   const seenIds = new Set<string>()
+  const earlierExcerpts: { row: number; source: string; text: string }[] = []
 
   rows.forEach((row, index) => {
     const rowNumber = index + 2
@@ -59,7 +81,48 @@ export function validateExcerpts(rows: HumanCodedExcerpt[], codebook: CodeDefini
     seenIds.add(row.excerpt_id)
 
     if (row.human_code && !validCodes.has(row.human_code)) {
-      issues.push({ level: 'error', row: rowNumber, field: 'human_code', message: 'Human code is not present in the codebook.' })
+      const multipleCodes = detectedKnownCodes(row.human_code, normalizedCodes)
+      const normalizedMatch = normalizedCodes.get(normalizeIdentifier(row.human_code))
+      const message = multipleCodes.length > 1
+        ? `Multiple human codes detected (${multipleCodes.join(', ')}). Choose one primary code or split the record before freezing.`
+        : normalizedMatch
+          ? `Human code does not exactly match the codebook spelling “${normalizedMatch}”.`
+          : 'Human code is not present in the codebook.'
+      issues.push({ level: 'error', row: rowNumber, field: 'human_code', message })
+    }
+
+    if (row.second_coder_code && !validCodes.has(row.second_coder_code)) {
+      const multipleCodes = detectedKnownCodes(row.second_coder_code, normalizedCodes)
+      const normalizedMatch = normalizedCodes.get(normalizeIdentifier(row.second_coder_code))
+      const message = multipleCodes.length > 1
+        ? `Multiple second-coder codes detected (${multipleCodes.join(', ')}). The current field accepts one code.`
+        : normalizedMatch
+          ? `Second-coder code does not exactly match the codebook spelling “${normalizedMatch}”.`
+          : 'Second-coder code is not present in the codebook.'
+      issues.push({ level: 'error', row: rowNumber, field: 'second_coder_code', message })
+    }
+
+    const normalizedText = normalizeExcerpt(row.excerpt)
+    const normalizedSource = normalizeIdentifier(row.source_id)
+    if (normalizedText && normalizedSource) {
+      const exact = earlierExcerpts.find((item) => item.source === normalizedSource && item.text === normalizedText)
+      const overlap = exact ?? earlierExcerpts.find((item) => (
+        item.source === normalizedSource
+        && Math.min(item.text.length, normalizedText.length) >= 40
+        && (item.text.includes(normalizedText) || normalizedText.includes(item.text))
+      ))
+
+      if (overlap) {
+        issues.push({
+          level: 'warning',
+          row: rowNumber,
+          field: 'excerpt',
+          message: exact
+            ? `Excerpt text duplicates row ${overlap.row}; check for an accidental duplicate or segment-boundary issue.`
+            : `Excerpt overlaps row ${overlap.row} from the same source; check whether the segment boundaries are intentional.`,
+        })
+      }
+      earlierExcerpts.push({ row: rowNumber, source: normalizedSource, text: normalizedText })
     }
   })
 
