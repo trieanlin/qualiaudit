@@ -12,7 +12,8 @@ The domain layer remains UI-independent:
 - `importProfiles.ts` recognises conservative column-label patterns and supplies optional vendor-specific mapping aliases.
 - `reviewer.ts` creates a narrow blind payload and runs the deterministic reviewer.
 - `remoteReviewer.ts` is the browser client for explicit provider configuration and review requests.
-- `reviewerProtocol.ts` versions consent, prompt/adapter identity, and shared request metadata.
+- `reviewerRegistry.ts` holds named, immutable prompt/schema protocol entries.
+- `reviewerProtocol.ts` versions consent and defines shared request, disclosure, and error metadata.
 - `api/review.ts` re-allowlists the blind payload, keeps credentials server-side, calls the provider, and validates structured output before returning it.
 - `queue.ts` compares the already-independent reading with the frozen human record.
 - `export.ts` constructs reviewed rows and the non-resumable audit bundle.
@@ -60,6 +61,6 @@ sheet names, or represent a profile match as verified compatibility. See
 
 The initial OpenAI adapter sits behind `api/review.ts` and implements the same narrow payload/result contracts. The frontend first discloses what leaves the device, the provider, configured model, region label, and retention warning. Transmission requires versioned consent. The server then reconstructs an allowlisted payload rather than trusting client object shape.
 
-Provider credentials and activation stay in non-`VITE_` server environment variables. The Responses API request uses `store=false` and a strict schema. QualiAudit additionally checks code membership, one-to-one excerpt IDs, uncertainty values, and verbatim evidence before saving reviews. Provider/model/prompt/destination/consent metadata flow into audit exports.
+Provider credentials and activation stay in non-`VITE_` server environment variables. The Responses API request uses `store=false` and a strict schema selected from the named protocol registry. QualiAudit additionally checks code membership, one-to-one excerpt IDs, uncertainty values, and verbatim evidence before saving reviews. Provider/model/prompt/schema/destination/consent metadata and safe request identifiers flow into audit exports.
 
-The local deterministic adapter remains the default fallback so the public demo never requires a key or participant data. The remote endpoint is inactive unless an explicit deployment flag, key, and model are all present. This is a foundation rather than a completed threat model; public billable deployment still needs platform-level access, rate, and spend controls. See [Optional real reviewer](REMOTE_REVIEWER.md).
+The local deterministic adapter remains the default fallback so the public demo never requires a key or participant data. The remote endpoint is inactive unless an explicit deployment flag, key, and model are all present. Timeouts and provider throttling never trigger an automatic resend. The [initial threat model](THREAT_MODEL.md) documents why public billable deployment still needs platform-level access, durable rate, spend, logging, and institutional controls. See [Optional real reviewer](REMOTE_REVIEWER.md).

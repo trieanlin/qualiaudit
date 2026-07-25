@@ -1,6 +1,8 @@
 import {
+  ACTIVE_REVIEWER_PROTOCOL,
   OPENAI_PROMPT_VERSION,
   OPENAI_REVIEWER_ID,
+  OPENAI_SCHEMA_VERSION,
   REVIEWER_CONSENT_VERSION,
   type RemoteReviewRequest,
   type ReviewerProviderConfig,
@@ -32,17 +34,35 @@ interface ProviderReview {
 const MAX_EXCERPTS_PER_REQUEST = 50
 const MAX_CODEBOOK_ROWS = 300
 const MAX_SERIALISED_PAYLOAD_BYTES = 120_000
+const DEFAULT_PROVIDER_TIMEOUT_MS = 45_000
+const MIN_PROVIDER_TIMEOUT_MS = 10_000
+const MAX_PROVIDER_TIMEOUT_MS = 120_000
 const CONFIDENCE_VALUES = new Set<Confidence>(['low', 'medium', 'high'])
 
 class RequestValidationError extends Error {
   code: string
   status: number
+  retryAfterSeconds?: number
+  requestId?: string
+  providerRequestId?: string
 
-  constructor(message: string, code = 'invalid_request', status = 400) {
+  constructor(
+    message: string,
+    code = 'invalid_request',
+    status = 400,
+    details: {
+      retryAfterSeconds?: number
+      requestId?: string
+      providerRequestId?: string
+    } = {},
+  ) {
     super(message)
     this.name = 'RequestValidationError'
     this.code = code
     this.status = status
+    this.retryAfterSeconds = details.retryAfterSeconds
+    this.requestId = details.requestId
+    this.providerRequestId = details.providerRequestId
   }
 }
 
@@ -131,10 +151,20 @@ export function parseRemoteReviewRequest(value: unknown): {
   if (consent.granted !== true || consent.version !== REVIEWER_CONSENT_VERSION) {
     throw new RequestValidationError('Explicit provider consent is required.', 'consent_required')
   }
+  const requestId = stringValue(source.request_id, 'Request ID', 120)
+  if (!/^[\x21-\x7E]+$/.test(requestId)) {
+    throw new RequestValidationError('Request ID must contain printable ASCII characters only.')
+  }
   return {
-    requestId: stringValue(source.request_id, 'Request ID', 120),
+    requestId,
     payload: sanitiseBlindReviewPayload(source.payload),
   }
+}
+
+function providerTimeoutMs(): number {
+  const configured = Number(process.env.QUALIAUDIT_REVIEW_TIMEOUT_MS)
+  if (!Number.isFinite(configured)) return DEFAULT_PROVIDER_TIMEOUT_MS
+  return Math.min(MAX_PROVIDER_TIMEOUT_MS, Math.max(MIN_PROVIDER_TIMEOUT_MS, Math.round(configured)))
 }
 
 function providerConfig(): ReviewerProviderConfig {
@@ -148,6 +178,9 @@ function providerConfig(): ReviewerProviderConfig {
     retention: 'store=false; default abuse-monitoring logs may retain content for up to 30 days unless approved data controls apply',
     responsesStored: false,
     consentVersion: REVIEWER_CONSENT_VERSION,
+    promptVersion: OPENAI_PROMPT_VERSION,
+    schemaVersion: OPENAI_SCHEMA_VERSION,
+    requestTimeoutMs: providerTimeoutMs(),
   }
 }
 
@@ -195,23 +228,16 @@ function responseSchema(payload: BlindReviewPayload) {
   }
 }
 
-export function buildOpenAIRequestBody(payload: BlindReviewPayload) {
+export function buildOpenAIRequestBody(payload: BlindReviewPayload, model: string) {
   return {
-    model: process.env.OPENAI_MODEL,
+    model,
     store: false,
-    instructions: [
-      'Act as an independent qualitative-coding reviewer, not as a final decision-maker.',
-      'The human first-pass codes and rationales are deliberately absent. Do not infer or claim to know them.',
-      'Return exactly one review for every excerpt ID and use only codes present in the supplied codebook.',
-      'The evidence_quote must be a verbatim, non-empty substring of that excerpt.',
-      'Represent uncertainty honestly. Flag missing context or possible codebook overlap when relevant.',
-      'For reflexive thematic analysis, frame divergence as an alternative reading rather than an error or accuracy judgment.',
-    ].join(' '),
+    instructions: ACTIVE_REVIEWER_PROTOCOL.instructions.join(' '),
     input: JSON.stringify(payload),
     text: {
       format: {
         type: 'json_schema',
-        name: 'qualiaudit_blind_reviews',
+        name: ACTIVE_REVIEWER_PROTOCOL.responseFormatName,
         description: 'Independent excerpt-level qualitative coding reviews.',
         strict: true,
         schema: responseSchema(payload),
@@ -238,11 +264,18 @@ function outputText(value: unknown): string {
   throw new RequestValidationError('Provider returned no structured output.', 'invalid_provider_output', 502)
 }
 
+interface ReviewExecutionMetadata {
+  reviewedAt: string
+  model: string
+  requestId: string
+  providerRequestId?: string
+  providerResponseId?: string
+}
+
 export function validateProviderReviews(
   value: unknown,
   payload: BlindReviewPayload,
-  reviewedAt: string,
-  model: string,
+  execution: ReviewExecutionMetadata,
 ): AiReview[] {
   const source = record(value, 'Structured provider output')
   if (!Array.isArray(source.reviews) || source.reviews.length !== payload.excerpts.length) {
@@ -284,11 +317,15 @@ export function validateProviderReviews(
       ...(possibleIssue ? { possible_codebook_issue: possibleIssue } : {}),
       reviewer: OPENAI_REVIEWER_ID,
       provider: 'openai',
-      model,
+      model: execution.model,
       prompt_version: OPENAI_PROMPT_VERSION,
+      schema_version: OPENAI_SCHEMA_VERSION,
       data_destination: 'openai-api',
       consent_version: REVIEWER_CONSENT_VERSION,
-      reviewed_at: reviewedAt,
+      request_id: execution.requestId,
+      ...(execution.providerRequestId ? { provider_request_id: execution.providerRequestId } : {}),
+      ...(execution.providerResponseId ? { provider_response_id: execution.providerResponseId } : {}),
+      reviewed_at: execution.reviewedAt,
     }
   })
   if (seen.size !== excerpts.size) {
@@ -297,14 +334,69 @@ export function validateProviderReviews(
   return reviews
 }
 
+function safeProviderResponseId(value: unknown): string | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined
+  const id = (value as { id?: unknown }).id
+  return typeof id === 'string' && id.length <= 240 ? id : undefined
+}
+
+function retryAfterSeconds(value: string | null): number | undefined {
+  if (!value) return undefined
+  const seconds = Number(value)
+  if (Number.isFinite(seconds) && seconds >= 0) return Math.min(3_600, Math.ceil(seconds))
+  const date = Date.parse(value)
+  if (Number.isNaN(date)) return undefined
+  return Math.min(3_600, Math.max(0, Math.ceil((date - Date.now()) / 1_000)))
+}
+
+function providerFailure(response: Response, requestId: string): RequestValidationError {
+  const providerRequestId = response.headers.get('x-request-id') ?? undefined
+  const details = { requestId, providerRequestId }
+  if (response.status === 429) {
+    return new RequestValidationError(
+      'The model provider is temporarily rate limited. QualiAudit did not retry automatically.',
+      'provider_rate_limited',
+      429,
+      {
+        ...details,
+        retryAfterSeconds: retryAfterSeconds(response.headers.get('retry-after')),
+      },
+    )
+  }
+  if (response.status === 401 || response.status === 403) {
+    return new RequestValidationError(
+      'The server-side provider credentials or project access need attention.',
+      'provider_configuration_error',
+      503,
+      details,
+    )
+  }
+  return new RequestValidationError(
+    'The model provider did not complete this review. No human interpretation fields were sent.',
+    response.status >= 500 ? 'provider_unavailable' : 'provider_request_failed',
+    502,
+    details,
+  )
+}
+
+function isAbortError(error: unknown): boolean {
+  return error instanceof Error && error.name === 'AbortError'
+}
+
 function sendError(response: ApiResponse, error: unknown) {
   const known = error instanceof RequestValidationError
     ? error
     : new RequestValidationError('The independent reviewer could not complete.', 'reviewer_failed', 500)
+  if (known.retryAfterSeconds !== undefined) {
+    response.setHeader('Retry-After', String(known.retryAfterSeconds))
+  }
   response.status(known.status).json({
     error: {
       code: known.code,
       message: known.message,
+      ...(known.retryAfterSeconds !== undefined ? { retry_after_seconds: known.retryAfterSeconds } : {}),
+      ...(known.requestId ? { request_id: known.requestId } : {}),
+      ...(known.providerRequestId ? { provider_request_id: known.providerRequestId } : {}),
     },
   })
 }
@@ -337,32 +429,57 @@ export default async function handler(request: ApiRequest, response: ApiResponse
   try {
     const body = typeof request.body === 'string' ? JSON.parse(request.body) as unknown : request.body
     const { requestId, payload } = parseRemoteReviewRequest(body as RemoteReviewRequest)
-    const providerResponse = await fetch('https://api.openai.com/v1/responses', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-        'Content-Type': 'application/json',
-        'X-Client-Request-Id': requestId,
-      },
-      body: JSON.stringify(buildOpenAIRequestBody(payload)),
-    })
-    if (!providerResponse.ok) {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), config.requestTimeoutMs)
+    let providerResponse: Response
+    try {
+      providerResponse = await fetch('https://api.openai.com/v1/responses', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+          'X-Client-Request-Id': requestId,
+        },
+        body: JSON.stringify(buildOpenAIRequestBody(payload, config.model)),
+        signal: controller.signal,
+      })
+    } catch (error) {
+      if (isAbortError(error)) {
+        throw new RequestValidationError(
+          'The model provider did not respond before the server timeout. QualiAudit did not retry automatically.',
+          'provider_timeout',
+          504,
+          { requestId },
+        )
+      }
       throw new RequestValidationError(
-        'The model provider did not complete this review. No human interpretation fields were sent.',
-        'provider_request_failed',
+        'The server could not reach the model provider. QualiAudit did not retry automatically.',
+        'provider_unavailable',
         502,
+        { requestId },
       )
+    } finally {
+      clearTimeout(timeout)
     }
+    if (!providerResponse.ok) throw providerFailure(providerResponse, requestId)
     const providerBody = await providerResponse.json() as unknown
+    const providerRequestId = providerResponse.headers.get('x-request-id') ?? undefined
     let reviews: AiReview[]
     try {
       const structured = JSON.parse(outputText(providerBody)) as unknown
-      reviews = validateProviderReviews(structured, payload, new Date().toISOString(), config.model)
+      reviews = validateProviderReviews(structured, payload, {
+        reviewedAt: new Date().toISOString(),
+        model: config.model,
+        requestId,
+        providerRequestId,
+        providerResponseId: safeProviderResponseId(providerBody),
+      })
     } catch {
       throw new RequestValidationError(
         'The model provider returned output that did not pass QualiAudit validation.',
         'invalid_provider_output',
         502,
+        { requestId, providerRequestId },
       )
     }
     response.status(200).json({ reviews })

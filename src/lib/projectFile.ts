@@ -175,8 +175,12 @@ function parseReview(value: unknown, index: number): AiReview {
     provider: provider as AiReview['provider'],
     model: optionalText(item.model, `${label} model`),
     prompt_version: optionalText(item.prompt_version, `${label} prompt version`),
+    schema_version: optionalText(item.schema_version, `${label} schema version`),
     data_destination: destination as AiReview['data_destination'],
     consent_version: consentVersion as AiReview['consent_version'],
+    request_id: optionalText(item.request_id, `${label} request ID`),
+    provider_request_id: optionalText(item.provider_request_id, `${label} provider request ID`),
+    provider_response_id: optionalText(item.provider_response_id, `${label} provider response ID`),
     reviewed_at: isoDate(item.reviewed_at, `${label} review date`),
   }
 }

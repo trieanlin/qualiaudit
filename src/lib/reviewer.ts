@@ -111,6 +111,7 @@ export function runMockBlindReview(payload: BlindReviewPayload, reviewedAt = new
       provider: 'local-mock',
       model: 'deterministic-mock-v0.1',
       prompt_version: 'mock-rules-v0.1',
+      schema_version: 'mock-review-output-v0.1',
       data_destination: 'local-browser',
       reviewed_at: reviewedAt,
     }

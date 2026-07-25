@@ -26,6 +26,7 @@ These are the first scoped issues to create when the repository receives a GitHu
 ## QA-04 — Validate and recover structured reviewer responses
 
 **Phase:** Optional real reviewer  
+**Status:** Complete
 **Outcome:** Invalid codes, missing evidence, malformed uncertainty, and provider failures become transparent review states rather than fabricated success.  
 **Acceptance:** Schema errors are visible; retry is user-controlled; invalid suggestions are classified in the queue; the original provider response is not exposed if it may contain sensitive content.
 

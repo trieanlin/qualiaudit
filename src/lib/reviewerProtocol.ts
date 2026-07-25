@@ -1,8 +1,14 @@
 import type { BlindReviewPayload, ProviderConsent } from '../types'
+export {
+  ACTIVE_REVIEWER_PROTOCOL,
+  ACTIVE_REVIEWER_PROTOCOL_ID,
+  OPENAI_PROMPT_VERSION,
+  OPENAI_REVIEWER_ID,
+  OPENAI_SCHEMA_VERSION,
+  REVIEWER_PROTOCOL_REGISTRY,
+} from './reviewerRegistry'
 
 export const REVIEWER_CONSENT_VERSION: ProviderConsent['version'] = 'qualiaudit-openai-consent-v0.2'
-export const OPENAI_REVIEWER_ID = 'openai-responses-v0.2' as const
-export const OPENAI_PROMPT_VERSION = 'blind-review-v0.2' as const
 
 export const REMOTE_REVIEW_EXACT_FIELDS = [
   'research question',
@@ -22,6 +28,9 @@ export interface ReviewerProviderConfig {
   retention: string
   responsesStored: false
   consentVersion: typeof REVIEWER_CONSENT_VERSION
+  promptVersion: string
+  schemaVersion: string
+  requestTimeoutMs: number
 }
 
 export interface RemoteReviewRequest {
@@ -35,4 +44,14 @@ export interface RemoteReviewRequest {
 
 export interface RemoteReviewResponse {
   reviews: import('../types').AiReview[]
+}
+
+export interface RemoteReviewErrorResponse {
+  error: {
+    code: string
+    message: string
+    retry_after_seconds?: number
+    request_id?: string
+    provider_request_id?: string
+  }
 }
