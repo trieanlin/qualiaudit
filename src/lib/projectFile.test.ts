@@ -35,6 +35,10 @@ function completedState(): ReviewState {
       changed_after_ai_exposure: true,
     }],
     selectedExcerptId: null,
+    reviewerMode: 'mock',
+    providerConsent: null,
+    reviewRequestId: 'portable-project-test-request',
+    remoteRequestStarted: false,
   }
 }
 

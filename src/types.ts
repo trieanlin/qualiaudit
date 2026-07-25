@@ -1,5 +1,6 @@
 export type AnalysisMode = 'codebook' | 'reflexive'
 export type Confidence = 'low' | 'medium' | 'high'
+export type ReviewerMode = 'mock' | 'openai'
 
 export interface ProjectBrief {
   id: string
@@ -45,6 +46,13 @@ export interface BlindReviewPayload {
   excerpts: BlindExcerpt[]
 }
 
+export interface ProviderConsent {
+  version: 'qualiaudit-openai-consent-v0.2'
+  provider: 'openai'
+  grantedAt: string
+  exactFields: string[]
+}
+
 export interface AiReview {
   excerpt_id: string
   primary_suggested_code: string
@@ -54,7 +62,12 @@ export interface AiReview {
   uncertainty: Confidence
   needs_more_context: boolean
   possible_codebook_issue?: string
-  reviewer: 'deterministic-mock-v0.1'
+  reviewer: 'deterministic-mock-v0.1' | 'openai-responses-v0.2'
+  provider?: 'local-mock' | 'openai'
+  model?: string
+  prompt_version?: string
+  data_destination?: 'local-browser' | 'openai-api'
+  consent_version?: ProviderConsent['version']
   reviewed_at: string
 }
 
