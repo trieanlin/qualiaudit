@@ -30,8 +30,10 @@ All notable changes to QualiAudit are documented here. The project follows [Sema
 - Conservative multi-signal profile detection, manual fallback for unresolved fields, explicit native-project boundaries, and a fictional four-sheet interoperability fixture.
 - An append-only codebook-change ledger for “Revise codebook” resolutions with frozen before/proposed after guidance, author, rationale, timestamp, affected excerpts, and unresolved recoding work.
 - Append-only researcher reflexive memos with author, timestamp, linked excerpt, and the human decision snapshot that prompted the memo.
+- A distinct optional second-human-coder comparison with method-sensitive overlap/divergence language, separate queue and case framing, and an independent audit section.
+- CSV second-human fields plus audit JSON schema version 0.5 and HTML report version 0.3 records that explicitly exclude human–human counts from AI queue categories and reliability claims.
 - Project-file schema version 3 with safe version 1/2 migration, reflexive-memo and codebook-ledger integrity checks, and linked resolution events.
-- Audit bundle schema version 0.4 with reflexive memos, codebook-change history, and a flattened unresolved-recoding list.
+- Audit bundle schema version 0.4 introduced reflexive memos, codebook-change history, and a flattened unresolved-recoding list.
 - A self-contained printable HTML audit report with project context, method statement, reviewer provenance, frozen codebook, decision and reflexive-memo logs, unresolved cases, codebook changes, and limitations.
 - Privacy-minimised HTML export by default, with source excerpts, context, and AI evidence quotes included only after an explicit researcher choice.
 - Script-free report output with escaped imported content, a restrictive content-security policy, responsive layout, and dedicated print styles for browser PDF creation.

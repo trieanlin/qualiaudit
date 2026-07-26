@@ -28,8 +28,13 @@ describe('audit exports', () => {
     const rows = buildReviewedRows(SAMPLE_EXCERPTS, reviews, [resolution])
     expect(rows).toHaveLength(SAMPLE_EXCERPTS.length)
     expect(rows[1]).toMatchObject({ final_decision: 'keep_both', changed_after_ai_exposure: 'true' })
+    expect(rows[1]).toMatchObject({
+      second_coder_code: 'PRIVACY_BOUNDARY',
+      human_human_relationship: 'different_code',
+    })
     expect(rows[0].final_decision).toBe('not_reviewed')
     expect(reviewedRowsCsv(rows)).toContain('FAMILY_FEEDBACK + PRIVACY_BOUNDARY')
+    expect(reviewedRowsCsv(rows)).toContain('second_coder_rationale')
   })
 
   it('documents the blind boundary and lack of AI decision authority', () => {
@@ -49,6 +54,12 @@ describe('audit exports', () => {
     expect(bundle.methodological_safeguards.withheld_from_reviewer).toContain('reflexive_memos')
     expect(bundle.human_decisions_changed_after_ai_exposure).toHaveLength(1)
     expect(bundle.reflexive_memos).toEqual([memo])
+    expect(bundle.second_human_comparison).toMatchObject({
+      analytical_status: 'separate_from_ai_review',
+      included_in_human_ai_queue_categories: false,
+      intercoder_reliability_coefficient_calculated: false,
+      summary: { total: 3, sameCode: 1, differentCode: 2 },
+    })
     expect(bundle.reviewer.schema_version).toBe('mock-review-output-v0.1')
   })
 
@@ -131,7 +142,7 @@ describe('audit exports', () => {
       codebookChanges: [change],
     })
 
-    expect(bundle.schema_version).toBe('qualiaudit-audit-v0.4')
+    expect(bundle.schema_version).toBe('qualiaudit-audit-v0.5')
     expect(bundle.codebook_change_ledger[0].before).toEqual(before)
     expect(bundle.codebook_change_ledger[0].after.definition).toContain('negotiated')
     expect(bundle.unresolved_recoding_work).toEqual([

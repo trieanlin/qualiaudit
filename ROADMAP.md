@@ -35,7 +35,7 @@ This roadmap treats product, methodological, governance, and engineering work as
 - [x] Codebook change ledger with before/after definitions and affected excerpts.
 - [ ] Batch triage that never hides unresolved or low-context cases.
 - [x] Researcher-authored reflexive memos linked to decision events.
-- [ ] Optional second-human-coder comparison kept analytically separate from AI review.
+- [x] Optional second-human-coder comparison kept analytically separate from AI review.
 
 ## Phase 4 — research and evaluation
 

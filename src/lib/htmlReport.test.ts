@@ -85,8 +85,10 @@ describe('printable HTML audit report', () => {
     expect(report).toContain('Both readings remain analytically useful.')
     expect(report).toContain('Researcher reflections linked to decisions')
     expect(report).toContain(memo.body)
-    expect(report).toContain('QualiAudit HTML v0.2')
-    expect(report).toContain('Second-coder rationale:')
+    expect(report).toContain('QualiAudit HTML v0.3')
+    expect(report).toContain('Human readings kept separate from AI review')
+    expect(report).toContain('Second-human rationale')
+    expect(report).toContain('excluded from human–AI queue categories')
     expect(report).toContain('Possible codebook issue:')
     expect(report).toContain('No post-exposure decision recorded.')
     expect(report).toContain('revisit after proposed FAMILY_FEEDBACK guidance change')
@@ -173,7 +175,14 @@ describe('printable HTML audit report', () => {
       { ...SAMPLE_PROJECT, analysisMode: 'reflexive' },
       SAMPLE_EXCERPTS.length,
       reviews[0],
+      3,
     )).toContain('prompt for reflexivity rather than an error')
+    expect(buildAuditMethodStatement(
+      { ...SAMPLE_PROJECT, analysisMode: 'reflexive' },
+      SAMPLE_EXCERPTS.length,
+      reviews[0],
+      3,
+    )).toContain('documented separately as interpretive overlap or alternative readings')
     expect(htmlAuditReportFilename({
       ...SAMPLE_PROJECT,
       name: ' Sleep / Home: “Pilot” ',

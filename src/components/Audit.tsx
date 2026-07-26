@@ -1,9 +1,14 @@
 import { useState } from 'react'
-import { ArrowLeft, Check, Download, FileDown, FileJson, FileText, History, Info, LockKeyhole, NotebookPen, ShieldCheck } from 'lucide-react'
+import { ArrowLeft, Check, Download, FileDown, FileJson, FileText, GitCompareArrows, History, Info, LockKeyhole, NotebookPen, ShieldCheck, UsersRound } from 'lucide-react'
 import { buildAuditBundle, buildReviewedRows, downloadText, reviewedRowsCsv } from '../lib/export'
 import { buildAuditMethodStatement, buildHtmlAuditReport, htmlAuditReportFilename } from '../lib/htmlReport'
 import { categoryLabel, classifyCase } from '../lib/queue'
 import { decisionLabels } from '../lib/resolutions'
+import {
+  buildSecondCoderComparisons,
+  secondCoderRelationshipLabel,
+  summariseSecondCoderComparisons,
+} from '../lib/secondCoder'
 import type {
   AiReview,
   CodebookChange,
@@ -53,6 +58,8 @@ export function Audit({
     (total, item) => total + item.unresolved_recode_excerpt_ids.length,
     0,
   )
+  const secondCoderComparisons = buildSecondCoderComparisons(excerpts)
+  const secondCoderSummary = summariseSecondCoderComparisons(secondCoderComparisons)
   const rows = buildReviewedRows(excerpts, reviews, resolutions)
   const bundle = buildAuditBundle({
     project,
@@ -73,7 +80,7 @@ export function Audit({
   const promptVersion = reviewer?.prompt_version ?? (usedOpenAi ? 'not recorded' : 'mock-rules-v0.1')
   const schemaVersion = reviewer?.schema_version ?? (usedOpenAi ? 'not recorded' : 'mock-review-output-v0.1')
   const dataDestination = usedOpenAi ? 'OpenAI API via server endpoint' : 'Local browser only'
-  const methodStatement = buildAuditMethodStatement(project, excerpts.length, reviewer)
+  const methodStatement = buildAuditMethodStatement(project, excerpts.length, reviewer, secondCoderSummary.total)
   const downloadHtmlReport = () => {
     downloadText(
       htmlAuditReportFilename(project),
@@ -187,6 +194,55 @@ export function Audit({
           <small>Review and adapt this statement for your actual method, model, data governance, and institutional requirements.</small>
         </section>
       </div>
+
+      <section className="second-human-audit-section">
+        <div className="section-miniheading">
+          <div><span className="overline">SECOND-HUMAN COMPARISON</span><h2>Human readings kept separate from AI review</h2></div>
+          <span>{secondCoderSummary.total} optional record{secondCoderSummary.total === 1 ? '' : 's'}</span>
+        </div>
+        <div className="second-human-method-note">
+          <UsersRound />
+          <p>
+            <strong>This is a distinct human–human record.</strong>
+            It was frozen before AI exposure, withheld from the AI reviewer, and excluded from human–AI queue categories.
+            {project.analysisMode === 'codebook'
+              ? ' Counts are descriptive only; no intercoder reliability coefficient is calculated from this optional subset.'
+              : ' Alternative readings are documented as interpretive resources rather than coding errors.'}
+          </p>
+        </div>
+        {secondCoderComparisons.length === 0 ? (
+          <div className="empty-log">
+            <UsersRound />
+            <h3>No second-human records supplied.</h3>
+            <p>The review remains valid as a human–AI audit; QualiAudit does not present AI as a substitute for another human coder.</p>
+          </div>
+        ) : (
+          <>
+            <dl className="second-human-audit-summary">
+              <div><dt>Total optional records</dt><dd>{secondCoderSummary.total}</dd></div>
+              <div><dt>{project.analysisMode === 'reflexive' ? 'Interpretive overlap' : 'Direct code overlap'}</dt><dd>{secondCoderSummary.sameCode}</dd></div>
+              <div><dt>{project.analysisMode === 'reflexive' ? 'Alternative readings' : 'Different interpretations'}</dt><dd>{secondCoderSummary.differentCode}</dd></div>
+            </dl>
+            <div className="second-human-audit-list">
+              {secondCoderComparisons.map((comparison) => (
+                <article key={comparison.excerpt_id}>
+                  <div className="second-human-audit-topline">
+                    <span className="code-pill">{comparison.excerpt_id}</span>
+                    <span>{secondCoderRelationshipLabel(comparison.relationship, project.analysisMode)}</span>
+                  </div>
+                  <div className="second-human-audit-codes">
+                    <span>First human <b>{comparison.first_coder_code}</b></span>
+                    <GitCompareArrows aria-hidden="true" />
+                    <span>Second human <b>{comparison.second_coder_code}</b></span>
+                  </div>
+                  <p>{comparison.second_coder_rationale || 'No second-human rationale was supplied.'}</p>
+                  <button className="text-button" type="button" onClick={() => onOpenCase(comparison.excerpt_id)}>Open case</button>
+                </article>
+              ))}
+            </div>
+          </>
+        )}
+      </section>
 
       <section className="codebook-ledger-section">
         <div className="section-miniheading">

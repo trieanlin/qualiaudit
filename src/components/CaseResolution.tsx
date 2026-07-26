@@ -3,6 +3,7 @@ import { useMemo, useRef, useState } from 'react'
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { categoryLabel, classifyCase } from '../lib/queue'
 import { decisionLabels } from '../lib/resolutions'
+import { secondCoderRelationshipLabel } from '../lib/secondCoder'
 import type {
   AiReview,
   CodebookChange,
@@ -236,15 +237,39 @@ export function CaseResolution({
         {human.context && <p><strong>Context supplied to reviewer:</strong> {human.context}</p>}
       </section>
 
+      {human.second_coder_code && (
+        <section className="second-human-case" aria-labelledby="second-human-case-heading">
+          <div className="second-human-case-heading">
+            <span className="avatar second-human-avatar"><UserRound /></span>
+            <div>
+              <small>OPTIONAL SECOND-HUMAN RECORD · FROZEN BEFORE AI EXPOSURE</small>
+              <h2 id="second-human-case-heading">A separate human comparison</h2>
+            </div>
+            <span className="second-human-relationship">
+              {secondCoderRelationshipLabel(
+                human.second_coder_code === human.human_code ? 'same_code' : 'different_code',
+                project.analysisMode,
+              )}
+            </span>
+          </div>
+          <div className="second-human-codes">
+            <div><small>FIRST HUMAN</small><strong>{human.human_code}</strong></div>
+            <GitCompareArrows aria-hidden="true" />
+            <div><small>SECOND HUMAN</small><strong>{human.second_coder_code}</strong></div>
+          </div>
+          <p>{human.second_coder_rationale || 'No second-human rationale was supplied.'}</p>
+          <div className="second-human-note" role="note">
+            This record was withheld from the AI reviewer. It is shown separately and does not determine the human–AI queue category.
+          </div>
+        </section>
+      )}
+
       <div className="reading-comparison">
         <section className="reading-panel human-panel">
           <div className="panel-kicker"><span className="avatar human-avatar"><UserRound /></span><span><small>FROZEN BEFORE AI EXPOSURE</small><strong>Human first-pass</strong></span></div>
           <div className="reading-code"><small>CODE</small><strong>{human.human_code}</strong></div>
           <p>{human.human_rationale || 'No rationale was supplied.'}</p>
           <div className="reading-meta"><span>Confidence <b>{human.human_confidence ?? 'not stated'}</b></span></div>
-          {human.second_coder_code && (
-            <div className="second-coder"><small>SECOND CODER (OPTIONAL RECORD)</small><strong>{human.second_coder_code}</strong><p>{human.second_coder_rationale}</p></div>
-          )}
         </section>
 
         <div className="comparison-divider"><GitCompareArrows /></div>

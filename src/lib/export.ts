@@ -9,12 +9,16 @@ import type {
   Resolution,
 } from '../types'
 import { toCsv } from './csv'
+import { buildSecondCoderComparisons, summariseSecondCoderComparisons } from './secondCoder'
 
 export interface ReviewedCodingRow {
   excerpt_id: string
   source_id: string
   excerpt: string
   human_code: string
+  second_coder_code: string
+  second_coder_rationale: string
+  human_human_relationship: string
   ai_suggested_code: string
   ai_alternative_code: string
   ai_uncertainty: string
@@ -30,14 +34,21 @@ export function buildReviewedRows(
   reviews: AiReview[],
   resolutions: Resolution[],
 ): ReviewedCodingRow[] {
+  const secondCoderByExcerpt = new Map(
+    buildSecondCoderComparisons(excerpts).map((comparison) => [comparison.excerpt_id, comparison]),
+  )
   return excerpts.map((human) => {
     const ai = reviews.find((item) => item.excerpt_id === human.excerpt_id)
     const resolution = resolutions.find((item) => item.excerpt_id === human.excerpt_id)
+    const secondCoder = secondCoderByExcerpt.get(human.excerpt_id)
     return {
       excerpt_id: human.excerpt_id,
       source_id: human.source_id,
       excerpt: human.excerpt,
       human_code: human.human_code,
+      second_coder_code: secondCoder?.second_coder_code ?? '',
+      second_coder_rationale: secondCoder?.second_coder_rationale ?? '',
+      human_human_relationship: secondCoder?.relationship ?? '',
       ai_suggested_code: ai?.primary_suggested_code ?? '',
       ai_alternative_code: ai?.alternative_code ?? '',
       ai_uncertainty: ai?.uncertainty ?? '',
@@ -56,6 +67,9 @@ export function reviewedRowsCsv(rows: ReviewedCodingRow[]): string {
     'source_id',
     'excerpt',
     'human_code',
+    'second_coder_code',
+    'second_coder_rationale',
+    'human_human_relationship',
     'ai_suggested_code',
     'ai_alternative_code',
     'ai_uncertainty',
@@ -89,8 +103,9 @@ export function buildAuditBundle(args: {
   } = args
   const firstReview = reviews[0]
   const usedOpenAi = firstReview?.provider === 'openai'
+  const secondCoderComparisons = buildSecondCoderComparisons(excerpts)
   return {
-    schema_version: 'qualiaudit-audit-v0.4',
+    schema_version: 'qualiaudit-audit-v0.5',
     exported_at: new Date().toISOString(),
     project,
     methodological_safeguards: {
@@ -122,6 +137,14 @@ export function buildAuditBundle(args: {
       provider_response_id: firstReview?.provider_response_id ?? null,
     },
     codebook,
+    second_human_comparison: {
+      analytical_status: 'separate_from_ai_review',
+      analysis_mode: project.analysisMode,
+      included_in_human_ai_queue_categories: false,
+      intercoder_reliability_coefficient_calculated: false,
+      summary: summariseSecondCoderComparisons(secondCoderComparisons),
+      records: secondCoderComparisons,
+    },
     reviewed_coding_table: buildReviewedRows(excerpts, reviews, resolutions),
     ai_reviews: reviews,
     decision_log: resolutions,
