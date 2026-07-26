@@ -35,6 +35,8 @@ information sheet or consent form.
   negative-case handling, and reporting limits.
 - [Governance gate](GOVERNANCE_GATE.md) — prerequisites that must be resolved
   locally before recruitment.
+- [Internal protocol dry-run — 2026-07-26](INTERNAL_DRY_RUN_2026-07-26.md) —
+  a synthetic, non-participant rehearsal record; it is not study evidence.
 
 ## Intended use
 

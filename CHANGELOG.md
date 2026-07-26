@@ -10,6 +10,15 @@ All notable changes to QualiAudit are documented here. The project follows [Sema
   including method-sensitive research questions, a neutral moderated-session
   guide, privacy-minimised observation template, negative-case analysis plan,
   and explicit pre-recruitment governance gate.
+- A clearly labelled internal, non-participant dry-run record covering both
+  method routes without presenting the rehearsal as product-validation
+  evidence.
+
+### Changed
+
+- The moderated session guide now directs participants from the demo's initial
+  Review materials screen to Project brief before method and material
+  orientation.
 
 ## [0.2.0] - 2026-07-26
 

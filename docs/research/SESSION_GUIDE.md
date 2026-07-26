@@ -59,6 +59,10 @@ Prompt:
 > Please open the synthetic review and talk me through the project, research
 > question, method, codebook, and existing human coding.
 
+The demo opens on **Review materials**. Ask the participant to open **Project
+brief** before inspecting the codebook and excerpts so the method and intended
+AI role are considered before the review materials.
+
 Observe whether the participant notices:
 
 - fictional-data labelling;
