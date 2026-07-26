@@ -47,8 +47,14 @@ These are the first scoped issues to create when the repository receives a GitHu
 ## QA-07 — Conduct formative usability and automation-bias research
 
 **Phase:** Research and evaluation  
+**Status:** Protocol foundation complete; recruitment and study not started
 **Outcome:** Product decisions are informed by observed use with qualitative researchers rather than assumed trust or productivity gains.  
 **Acceptance:** Study materials distinguish methods; evaluation considers anchoring, rationale quality, interpretive diversity, and refusal/rejection behaviour; negative findings are documented.
+
+The draft [formative evaluation kit](research/README.md) provides the
+pre-recruitment protocol, session guide, observation record, analysis plan, and
+governance gate. It is not evidence that participants have been recruited,
+institutional approval has been obtained, or the product has been validated.
 
 ## QA-08 — Accessibility audit of the complete review workflow
 

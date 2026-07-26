@@ -41,6 +41,7 @@ Phases 1–3 form the v0.2.0 release scope. The remaining items below require hu
 
 ## Phase 4 — research and evaluation
 
+- [x] Publish an ethics-gated, synthetic-data formative evaluation kit before recruitment.
 - [ ] Usability study with doctoral and professional qualitative researchers.
 - [ ] Evaluate anchoring, automation bias, interpretive diversity, and rationale quality.
 - [ ] Publish limitations and negative findings alongside workflow changes.

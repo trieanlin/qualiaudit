@@ -205,6 +205,7 @@ The current prototype does not:
 - [Initial threat model and deployment gate](docs/THREAT_MODEL.md)
 - [Browser encryption feasibility](docs/ENCRYPTION_FEASIBILITY.md)
 - [Accessibility engineering audit](docs/ACCESSIBILITY_AUDIT.md)
+- [Formative evaluation kit](docs/research/README.md)
 - [Issue-ready backlog](docs/ISSUE_BACKLOG.md)
 - [Release privacy and secret checklist](docs/RELEASE_CHECKLIST.md)
 - [v0.2.0 release notes](docs/RELEASE_NOTES_0.2.0.md)
