@@ -1,5 +1,7 @@
-import { ArrowLeft, Check, Download, FileJson, FileText, History, Info, LockKeyhole, ShieldCheck } from 'lucide-react'
+import { useState } from 'react'
+import { ArrowLeft, Check, Download, FileDown, FileJson, FileText, History, Info, LockKeyhole, ShieldCheck } from 'lucide-react'
 import { buildAuditBundle, buildReviewedRows, downloadText, reviewedRowsCsv } from '../lib/export'
+import { buildAuditMethodStatement, buildHtmlAuditReport, htmlAuditReportFilename } from '../lib/htmlReport'
 import { categoryLabel, classifyCase } from '../lib/queue'
 import { decisionLabels } from '../lib/resolutions'
 import type {
@@ -40,6 +42,8 @@ export function Audit({
   onBack,
   onOpenCase,
 }: AuditProps) {
+  const [reportOptionsOpen, setReportOptionsOpen] = useState(false)
+  const [includeSourceText, setIncludeSourceText] = useState(false)
   const changed = resolutions.filter((item) => item.changed_after_ai_exposure)
   const unresolved = resolutions.filter((item) => item.decision === 'unresolved')
   const unresolvedRecodingCount = codebookChanges.reduce(
@@ -65,9 +69,24 @@ export function Audit({
   const promptVersion = reviewer?.prompt_version ?? (usedOpenAi ? 'not recorded' : 'mock-rules-v0.1')
   const schemaVersion = reviewer?.schema_version ?? (usedOpenAi ? 'not recorded' : 'mock-review-output-v0.1')
   const dataDestination = usedOpenAi ? 'OpenAI API via server endpoint' : 'Local browser only'
-  const methodStatement = project.analysisMode === 'reflexive'
-    ? `We used QualiAudit to support reflexive engagement with an independently generated AI reading of ${excerpts.length} coded excerpts. Human first-pass interpretations were frozen before review and withheld from ${usedOpenAi ? `the ${reviewer?.model ?? 'configured OpenAI'} reviewer` : 'the deterministic local mock reviewer'}. Divergence was treated as a prompt for reflexivity rather than an error or accuracy measure. Researchers retained final interpretive authority and documented post-exposure decisions in an audit log.`
-    : `We used QualiAudit to compare human first-pass coding with an independently generated AI reading of ${excerpts.length} coded excerpts. Human codes and rationales were frozen and withheld from ${usedOpenAi ? `the ${reviewer?.model ?? 'configured OpenAI'} reviewer` : 'the deterministic local mock reviewer'}. Descriptive overlap and divergence were used to prioritise human review, not as validation or intercoder reliability. Researchers retained final decision authority and documented post-exposure decisions in an audit log.`
+  const methodStatement = buildAuditMethodStatement(project, excerpts.length, reviewer)
+  const downloadHtmlReport = () => {
+    downloadText(
+      htmlAuditReportFilename(project),
+      buildHtmlAuditReport({
+        project,
+        codebook,
+        excerpts,
+        frozen,
+        reviews,
+        resolutions,
+        codebookChanges,
+      }, {
+        includeSourceText,
+      }),
+      'text/html;charset=utf-8',
+    )
+  }
 
   return (
     <div className="page wide-page audit-page">
@@ -80,9 +99,55 @@ export function Audit({
         </div>
         <div className="export-group">
           <button className="button secondary" type="button" onClick={() => downloadText('qualiaudit-reviewed-coding.csv', reviewedRowsCsv(rows), 'text/csv;charset=utf-8')}><Download size={16} /> CSV</button>
-          <button className="button primary" type="button" onClick={() => downloadText('qualiaudit-audit.json', JSON.stringify(bundle, null, 2), 'application/json')}><FileJson size={16} /> Export audit JSON</button>
+          <button className="button secondary" type="button" onClick={() => downloadText('qualiaudit-audit.json', JSON.stringify(bundle, null, 2), 'application/json')}><FileJson size={16} /> Audit JSON</button>
+          <button
+            className="button primary"
+            type="button"
+            aria-expanded={reportOptionsOpen}
+            aria-controls="html-report-options"
+            onClick={() => setReportOptionsOpen((open) => !open)}
+          >
+            <FileDown size={16} /> HTML report
+          </button>
         </div>
       </div>
+
+      {reportOptionsOpen && (
+        <section className="report-export-panel" id="html-report-options" aria-labelledby="html-report-heading">
+          <div>
+            <span className="overline">PRINTABLE AUDIT REPORT</span>
+            <h2 id="html-report-heading">Choose whether source text belongs in this copy.</h2>
+            <p>The downloaded file is self-contained, contains no scripts, and makes no network requests. Open it in a browser and use Print to save a PDF.</p>
+          </div>
+          <fieldset>
+            <legend>Quoted source material</legend>
+            <label>
+              <input
+                type="radio"
+                name="html-report-source-text"
+                aria-label="Omit excerpt and evidence text"
+                checked={!includeSourceText}
+                onChange={() => setIncludeSourceText(false)}
+              />
+              <span><strong>Omit excerpt and evidence text <em>Recommended</em></strong><small>IDs, codes, decisions, and rationales remain. Review them for sensitive details before sharing.</small></span>
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="html-report-source-text"
+                aria-label="Include full source text"
+                checked={includeSourceText}
+                onChange={() => setIncludeSourceText(true)}
+              />
+              <span><strong>Include full source text</strong><small>Adds excerpts, context, and AI evidence quotes. Govern the report like the underlying research data.</small></span>
+            </label>
+          </fieldset>
+          <div className="report-export-action">
+            <span>{includeSourceText ? 'Full analytic record · contains quoted source data' : 'Privacy-minimised copy · source quotes omitted'}</span>
+            <button className="button primary" type="button" onClick={downloadHtmlReport}><Download size={16} /> Download HTML report</button>
+          </div>
+        </section>
+      )}
 
       <div className="audit-metrics">
         <article><span><Check /></span><div><strong>{resolutions.length}</strong><small>cases resolved</small></div></article>
