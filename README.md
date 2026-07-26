@@ -35,7 +35,7 @@ The browser-only demo supports a complete synthetic workflow while keeping impor
 3. Validate required fields, duplicate codes, missing definitions, and missing inclusion/exclusion guidance.
 4. Freeze a time-stamped snapshot of the human interpretation.
 5. Choose the no-transmission local reviewer, or review an explicit provider disclosure and consent to an optional server-side reviewer.
-6. Prioritise divergence, ambiguity, missing context, segment boundaries, and confidence cases.
+6. Prioritise divergence, ambiguity, missing context, segment boundaries, and confidence cases; optionally switch to safe triage groups that keep every unresolved case visible.
 7. Record one of nine human resolution decisions with a required rationale.
 8. If an optional second-human record exists, inspect its overlap or alternative reading in a separate pre-AI comparison that does not affect the AI queue category.
 9. Add append-only researcher reflexive memos linked to a recorded decision without sending them back to the reviewer.
@@ -60,6 +60,12 @@ The queue can show descriptive code overlap, related readings, codebook ambiguit
 The interface switches to language such as *interpretive overlap*, *related readings*, and *alternative reading*. It avoids accuracy and correct/incorrect claims, omits kappa, and presents divergence as material for reflexivity and potentially productive disagreement. A second human’s divergent code is likewise described as an *alternative human reading*, never as an error.
 
 Changing the method in **Project brief** updates the queue framing, comparison labels, audit statement, and methodological notes.
+
+## Safe queue triage
+
+The optional **Triage groups** view organises the complete reviewed set into protected attention, interpretive divergence, routine overlap, and recorded decisions. Missing-context, low-confidence, segment-boundary, codebook-ambiguity, and unsupported-AI cases are pinned first. Every unresolved case remains visible, including direct-overlap cases.
+
+Triage is deliberately non-decisional: it cannot batch-accept AI suggestions, batch-resolve cases, or automatically recode material. The JSON and HTML audit exports state this policy so the safeguard remains inspectable outside the interface.
 
 ## The blind-review boundary
 
@@ -110,7 +116,7 @@ npm run check:release
 npm run check
 ```
 
-The test suite covers validation, comma/semicolon/tab-delimited parsing, Unicode and structural import failures, multi-code and segment-boundary diagnostics, blind payload construction, deterministic review structure, explicit provider consent, server-side payload re-allowlisting, strict provider-output checks, method-aware queue labels, comparison categories, analytically separate second-human records, spreadsheet and research-tool profile mapping, fictional workbook fixtures, versioned project-file recovery and migration, append-only reflexive memos and codebook-change events, explicit browser-record deletion, CSV/JSON audit data, escaped privacy-minimised HTML reports, representative `axe-core` checks, keyboard interaction patterns, modal focus containment, and progress semantics.
+The test suite covers validation, comma/semicolon/tab-delimited parsing, Unicode and structural import failures, multi-code and segment-boundary diagnostics, blind payload construction, deterministic review structure, explicit provider consent, server-side payload re-allowlisting, strict provider-output checks, method-aware queue labels, comparison categories, safe triage coverage, analytically separate second-human records, spreadsheet and research-tool profile mapping, fictional workbook fixtures, versioned project-file recovery and migration, append-only reflexive memos and codebook-change events, explicit browser-record deletion, CSV/JSON audit data, escaped privacy-minimised HTML reports, representative `axe-core` checks, keyboard interaction patterns, modal focus containment, and progress semantics.
 
 The [accessibility engineering audit](docs/ACCESSIBILITY_AUDIT.md) records what has been checked and what remains. The project does not claim formal WCAG conformance while the VoiceOver, NVDA, zoom, and cross-browser assistive-technology matrix is still pending.
 

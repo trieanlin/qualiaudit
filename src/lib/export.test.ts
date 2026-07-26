@@ -52,6 +52,15 @@ describe('audit exports', () => {
     expect(bundle.methodological_safeguards.ai_has_final_decision_authority).toBe(false)
     expect(bundle.methodological_safeguards.withheld_from_reviewer).toContain('human_code')
     expect(bundle.methodological_safeguards.withheld_from_reviewer).toContain('reflexive_memos')
+    expect(bundle.queue_triage_policy).toMatchObject({
+      analytical_status: 'attention_organisation_only',
+      batch_resolution_available: false,
+      automatic_recoding_available: false,
+      unresolved_cases_hidden_by_triage: false,
+      protected_cases_pinned_first: true,
+    })
+    expect(bundle.queue_triage_policy.protected_unresolved_categories).toContain('insufficient_context')
+    expect(bundle.queue_triage_policy.protected_unresolved_categories).toContain('unsupported_or_invalid')
     expect(bundle.human_decisions_changed_after_ai_exposure).toHaveLength(1)
     expect(bundle.reflexive_memos).toEqual([memo])
     expect(bundle.second_human_comparison).toMatchObject({
@@ -142,7 +151,7 @@ describe('audit exports', () => {
       codebookChanges: [change],
     })
 
-    expect(bundle.schema_version).toBe('qualiaudit-audit-v0.5')
+    expect(bundle.schema_version).toBe('qualiaudit-audit-v0.6')
     expect(bundle.codebook_change_ledger[0].before).toEqual(before)
     expect(bundle.codebook_change_ledger[0].after.definition).toContain('negotiated')
     expect(bundle.unresolved_recoding_work).toEqual([

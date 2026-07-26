@@ -113,8 +113,8 @@ export function buildAuditMethodStatement(
     ? `the ${reviewer?.model ?? 'configured OpenAI'} reviewer`
     : 'the deterministic local mock reviewer'
   const base = project.analysisMode === 'reflexive'
-    ? `We used QualiAudit to support reflexive engagement with an independently generated AI reading of ${excerptCount} coded excerpts. Human first-pass interpretations were frozen before review and withheld from ${reviewerDescription}. Divergence was treated as a prompt for reflexivity rather than an error or accuracy measure. Researchers retained final interpretive authority and documented post-exposure decisions and researcher-authored memos in an audit log.`
-    : `We used QualiAudit to compare human first-pass coding with an independently generated AI reading of ${excerptCount} coded excerpts. Human codes and rationales were frozen and withheld from ${reviewerDescription}. Descriptive overlap and divergence were used to prioritise human review, not as validation or intercoder reliability. Researchers retained final decision authority and documented post-exposure decisions and researcher-authored memos in an audit log.`
+    ? `We used QualiAudit to support reflexive engagement with an independently generated AI reading of ${excerptCount} coded excerpts. Human first-pass interpretations were frozen before review and withheld from ${reviewerDescription}. Divergence was treated as a prompt for reflexivity rather than an error or accuracy measure. Queue triage organised attention without batch resolution, automatic recoding, or hiding unresolved cases. Researchers retained final interpretive authority and documented post-exposure decisions and researcher-authored memos in an audit log.`
+    : `We used QualiAudit to compare human first-pass coding with an independently generated AI reading of ${excerptCount} coded excerpts. Human codes and rationales were frozen and withheld from ${reviewerDescription}. Descriptive overlap and divergence were used to prioritise human review, not as validation or intercoder reliability. Queue triage organised attention without batch resolution, automatic recoding, or hiding unresolved cases. Researchers retained final decision authority and documented post-exposure decisions and researcher-authored memos in an audit log.`
   if (secondCoderCount === 0) return base
   const secondHumanSentence = project.analysisMode === 'reflexive'
     ? ` Optional second-human readings were available for ${secondCoderCount} excerpts and were documented separately as interpretive overlap or alternative readings; they were not sent to the AI reviewer.`
@@ -463,7 +463,7 @@ export function buildHtmlAuditReport(
         <div><dt>Analysis approach</dt><dd>${text(project.analysisMode === 'reflexive' ? 'Reflexive thematic analysis' : 'Codebook / framework analysis')}</dd></div>
         <div><dt>Project created</dt><dd>${formatDate(project.createdAt)}</dd></div>
         <div><dt>Report exported</dt><dd>${formatDate(exportedAt)}</dd></div>
-        <div><dt>Report format</dt><dd>QualiAudit HTML v0.3</dd></div>
+        <div><dt>Report format</dt><dd>QualiAudit HTML v0.4</dd></div>
       </dl>
       <p class="privacy-notice"><strong>Source-text setting.</strong> ${escapeHtml(privacyLabel)}</p>
       <p class="screen-note">This file is self-contained and makes no network requests. Use your browser’s Print command to create a paper or PDF copy.</p>
@@ -508,6 +508,7 @@ export function buildHtmlAuditReport(
           <h3>Blind-review boundary</h3>
           <p>Human codes, rationales, confidence, second-coder decisions, final conclusions, and researcher-authored memos were withheld from the independent reviewer.</p>
           <p><strong>AI final-decision authority:</strong> none. Human researchers retained interpretive authority.</p>
+          <p><strong>Queue triage:</strong> attention organisation only. It offered no batch resolution or automatic recoding, kept every unresolved case visible, and pinned context, confidence, boundary, ambiguity, and unsupported-reading concerns first.</p>
         </aside>
       </div>
     </section>

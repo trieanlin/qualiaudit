@@ -16,6 +16,7 @@ The domain layer remains UI-independent:
 - `reviewerProtocol.ts` versions consent and defines shared request, disclosure, and error metadata.
 - `api/review.ts` re-allowlists the blind payload, keeps credentials server-side, calls the provider, and validates structured output before returning it.
 - `queue.ts` compares the already-independent reading with the frozen human record.
+- `triage.ts` assigns every compared case to a method-aware attention band, with protected unresolved concerns pinned first.
 - `export.ts` constructs reviewed rows and the non-resumable audit bundle, including reflexive-memo, codebook-change, and unresolved-recoding records.
 - `htmlReport.ts` constructs an escaped, self-contained audit report with a privacy-minimised source-text setting and print styles.
 - `projectFile.ts` serialises, migrates, and validates a versioned, resumable copy of `ReviewState`.
@@ -45,6 +46,8 @@ Human-coded CSV ──► validation ──► frozen snapshot
 ```
 
 Human fields do not flow through the blind-payload branch. Comparison occurs only after the reviewer result exists.
+
+Queue triage is a pure presentation rule over the comparison category and resolution state. It does not mutate project state, create resolutions, or recode excerpts. All unresolved categories map to an explicit band; missing context, low confidence, segment-boundary questions, codebook ambiguity, and unsupported reviewer suggestions map to the first protected-attention band. Direct overlap remains visible because overlap does not remove the need for a human post-exposure decision. The chosen list/group presentation is retained only as a non-research browser-session preference so returning from a case does not disrupt triage; it is not added to the project file. The same non-decisional policy is included in JSON and HTML audit exports.
 
 Project files intentionally sit outside the reviewer boundary: they preserve the complete application state for the human researcher and therefore include fields withheld from AI. Import validation rejects malformed structure, unsupported schema versions, duplicate record IDs, resolutions without reviews, reviews that are not backed by the frozen excerpt set, reflexive memos without a linked decision, and codebook-change events whose IDs, excerpt references, or frozen baseline are inconsistent. Version 1 and 2 files migrate to the current version with empty records for features they predate. Restores never transmit the file and never treat audit JSON as a resumable project.
 
