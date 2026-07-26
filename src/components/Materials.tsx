@@ -1,5 +1,6 @@
 import { ArrowRight, Check, CircleAlert, Download, FileSpreadsheet, Info, Upload } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
+import type { KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { SAMPLE_NOTICE } from '../data/sample'
 import { DelimitedTextError, parseDelimitedText } from '../lib/csv'
 import type { MappedImportRow, SpreadsheetImportKind } from '../lib/spreadsheet'
@@ -67,11 +68,29 @@ export function Materials({ codebook, excerpts, onChangeCodebook, onChangeExcerp
   const [spreadsheetImport, setSpreadsheetImport] = useState<{ file: File; kind: SpreadsheetImportKind; sample?: boolean } | null>(null)
   const codebookInput = useRef<HTMLInputElement>(null)
   const excerptsInput = useRef<HTMLInputElement>(null)
+  const codebookTab = useRef<HTMLButtonElement>(null)
+  const codingTab = useRef<HTMLButtonElement>(null)
   const codebookIssues = useMemo(() => validateCodebook(codebook), [codebook])
   const excerptIssues = useMemo(() => validateExcerpts(excerpts, codebook), [excerpts, codebook])
   const errors = [...codebookIssues, ...excerptIssues].filter((issue) => issue.level === 'error')
   const warnings = [...codebookIssues, ...excerptIssues].filter((issue) => issue.level === 'warning')
   const ready = codebook.length > 0 && excerpts.length > 0 && errors.length === 0
+
+  const handleTabKeyDown = (
+    event: ReactKeyboardEvent<HTMLButtonElement>,
+    current: 'codebook' | 'coding',
+  ) => {
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return
+    event.preventDefault()
+    const next = event.key === 'ArrowLeft' || event.key === 'Home'
+      ? 'codebook'
+      : event.key === 'ArrowRight' || event.key === 'End'
+        ? 'coding'
+        : current
+    setTab(next)
+    const nextTabRef = next === 'codebook' ? codebookTab : codingTab
+    nextTabRef.current?.focus()
+  }
 
   const importCodebook = async (file?: File) => {
     if (!file) return
@@ -156,7 +175,7 @@ export function Materials({ codebook, excerpts, onChangeCodebook, onChangeExcerp
           <h1>Inspect the record that will be frozen.</h1>
           <p>Check definitions and first-pass coding before the independent review begins.</p>
         </div>
-        <div className={`validation-status ${ready ? 'ready' : 'attention'}`}>
+        <div className={`validation-status ${ready ? 'ready' : 'attention'}`} role="status">
           {ready ? <Check size={18} /> : <CircleAlert size={18} />}
           <div><span>{ready ? 'Ready to freeze' : 'Needs attention'}</span><small>{errors.length} errors · {warnings.length} warnings</small></div>
         </div>
@@ -166,15 +185,42 @@ export function Materials({ codebook, excerpts, onChangeCodebook, onChangeExcerp
       {locked && <div className="locked-notice"><span>Frozen record</span>These materials are read-only. They are the exact snapshot used for the independent review.</div>}
 
       <div className="material-tabs" role="tablist" aria-label="Review materials">
-        <button role="tab" aria-selected={tab === 'codebook'} className={tab === 'codebook' ? 'active' : ''} onClick={() => setTab('codebook')}>
+        <button
+          ref={codebookTab}
+          id="material-tab-codebook"
+          type="button"
+          role="tab"
+          aria-selected={tab === 'codebook'}
+          aria-controls="material-panel-codebook"
+          tabIndex={tab === 'codebook' ? 0 : -1}
+          className={tab === 'codebook' ? 'active' : ''}
+          onClick={() => setTab('codebook')}
+          onKeyDown={(event) => handleTabKeyDown(event, 'codebook')}
+        >
           Codebook <span>{codebook.length}</span>
         </button>
-        <button role="tab" aria-selected={tab === 'coding'} className={tab === 'coding' ? 'active' : ''} onClick={() => setTab('coding')}>
+        <button
+          ref={codingTab}
+          id="material-tab-coding"
+          type="button"
+          role="tab"
+          aria-selected={tab === 'coding'}
+          aria-controls="material-panel-coding"
+          tabIndex={tab === 'coding' ? 0 : -1}
+          className={tab === 'coding' ? 'active' : ''}
+          onClick={() => setTab('coding')}
+          onKeyDown={(event) => handleTabKeyDown(event, 'coding')}
+        >
           Human-coded excerpts <span>{excerpts.length}</span>
         </button>
       </div>
 
-      <section className="material-panel" role="tabpanel">
+      <section
+        className="material-panel"
+        id={`material-panel-${tab}`}
+        role="tabpanel"
+        aria-labelledby={`material-tab-${tab}`}
+      >
         <div className="panel-toolbar">
           <div>
             <h2>{tab === 'codebook' ? 'Code definitions' : 'Human first-pass coding'}</h2>
@@ -195,12 +241,13 @@ export function Materials({ codebook, excerpts, onChangeCodebook, onChangeExcerp
           </div>
         </div>
 
-        {importMessage && <p className={`import-message ${importMessage.kind}`}><FileSpreadsheet size={16} /> {importMessage.text}</p>}
+        {importMessage && <p className={`import-message ${importMessage.kind}`} role={importMessage.kind === 'error' ? 'alert' : 'status'}><FileSpreadsheet size={16} /> {importMessage.text}</p>}
 
         {tab === 'codebook' ? (
           <div className="table-scroll">
             <table className="data-table codebook-table">
-              <thead><tr><th>Code</th><th>Definition</th><th>Include when</th><th>Exclude when</th></tr></thead>
+              <caption className="sr-only">Frozen or imported codebook definitions</caption>
+              <thead><tr><th scope="col">Code</th><th scope="col">Definition</th><th scope="col">Include when</th><th scope="col">Exclude when</th></tr></thead>
               <tbody>
                 {codebook.map((row) => (
                   <tr key={row.code}>

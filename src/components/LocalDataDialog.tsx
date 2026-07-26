@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import type { ReviewState } from '../hooks/useReviewState'
+import { useDialogAccessibility } from '../hooks/useDialogAccessibility'
 import { formatStorageSize, summariseLocalData } from '../lib/localData'
 
 interface LocalDataDialogProps {
@@ -23,6 +24,7 @@ interface LocalDataDialogProps {
 export function LocalDataDialog({ state, onClose, onSaveProject, onClear }: LocalDataDialogProps) {
   const [confirming, setConfirming] = useState(false)
   const [deleted, setDeleted] = useState(false)
+  const { dialogRef, onDialogKeyDown } = useDialogAccessibility(onClose, deleted ? 'deleted' : 'inventory')
   const summary = summariseLocalData(state)
 
   const clearReview = () => {
@@ -35,10 +37,13 @@ export function LocalDataDialog({ state, onClose, onSaveProject, onClear }: Loca
     return (
       <div className="dialog-backdrop" role="presentation">
         <section
+          ref={dialogRef}
           className="spreadsheet-dialog local-data-dialog"
           role="dialog"
           aria-modal="true"
           aria-labelledby="local-data-deleted-title"
+          tabIndex={-1}
+          onKeyDown={onDialogKeyDown}
         >
           <div className="local-data-success">
             <span className="success-symbol"><CheckCircle2 aria-hidden="true" /></span>
@@ -48,7 +53,7 @@ export function LocalDataDialog({ state, onClose, onSaveProject, onClear }: Loca
               QualiAudit removed its own saved review record. Downloaded project files remain on your device
               until you delete them separately.
             </p>
-            <button className="button primary" type="button" onClick={onClose}>Return to QualiAudit</button>
+            <button data-dialog-initial-focus className="button primary" type="button" onClick={onClose}>Return to QualiAudit</button>
           </div>
         </section>
       </div>
@@ -58,10 +63,13 @@ export function LocalDataDialog({ state, onClose, onSaveProject, onClear }: Loca
   return (
     <div className="dialog-backdrop" role="presentation">
       <section
+        ref={dialogRef}
         className="spreadsheet-dialog local-data-dialog"
         role="dialog"
         aria-modal="true"
         aria-labelledby="local-data-title"
+        tabIndex={-1}
+        onKeyDown={onDialogKeyDown}
       >
         <header className="dialog-header">
           <span className="dialog-icon"><ShieldCheck aria-hidden="true" /></span>
@@ -70,7 +78,7 @@ export function LocalDataDialog({ state, onClose, onSaveProject, onClear }: Loca
             <h2 id="local-data-title">What this browser remembers</h2>
             <p>Inspect or remove QualiAudit’s saved review state without affecting other websites.</p>
           </div>
-          <button className="dialog-close" type="button" onClick={onClose} aria-label="Close local data dialog">
+          <button data-dialog-initial-focus className="dialog-close" type="button" onClick={onClose} aria-label="Close local data dialog">
             <X size={17} />
           </button>
         </header>

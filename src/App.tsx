@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Audit } from './components/Audit'
 import { CaseResolution } from './components/CaseResolution'
 import { FreezeReview, Reviewing } from './components/FreezeReview'
@@ -26,6 +26,20 @@ function cloneSample() {
 export default function App() {
   const { state, setState, patchState, reset } = useReviewState()
   const [showLocalData, setShowLocalData] = useState(false)
+  const previousViewKey = useRef(`${state.view}:${state.selectedExcerptId ?? ''}`)
+
+  useEffect(() => {
+    const nextViewKey = `${state.view}:${state.selectedExcerptId ?? ''}`
+    if (previousViewKey.current === nextViewKey) return
+    previousViewKey.current = nextViewKey
+    const frame = window.requestAnimationFrame(() => {
+      const heading = document.querySelector<HTMLElement>('#main-content h1')
+      if (!heading) return
+      if (!heading.hasAttribute('tabindex')) heading.setAttribute('tabindex', '-1')
+      heading.focus({ preventScroll: true })
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [state.selectedExcerptId, state.view])
 
   const openSample = () => {
     const sample = cloneSample()

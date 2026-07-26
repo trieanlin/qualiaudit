@@ -1,5 +1,6 @@
 import { ArchiveRestore, CircleAlert, FileJson2, LockKeyhole, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useDialogAccessibility } from '../hooks/useDialogAccessibility'
 import {
   MAX_PROJECT_FILE_SIZE,
   parsePortableProjectFile,
@@ -38,14 +39,7 @@ export function ProjectFileImportDialog({ file, onClose, onRestore }: ProjectFil
   const [projectFile, setProjectFile] = useState<PortableProjectFile | null>(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [onClose])
+  const { dialogRef, onDialogKeyDown } = useDialogAccessibility(onClose)
 
   useEffect(() => {
     let cancelled = false
@@ -74,7 +68,15 @@ export function ProjectFileImportDialog({ file, onClose, onRestore }: ProjectFil
 
   return (
     <div className="dialog-backdrop" role="presentation">
-      <section className="spreadsheet-dialog project-file-dialog" role="dialog" aria-modal="true" aria-labelledby="project-file-dialog-title">
+      <section
+        ref={dialogRef}
+        className="spreadsheet-dialog project-file-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="project-file-dialog-title"
+        tabIndex={-1}
+        onKeyDown={onDialogKeyDown}
+      >
         <header className="dialog-header">
           <div className="dialog-icon"><FileJson2 size={20} /></div>
           <div>
@@ -82,7 +84,7 @@ export function ProjectFileImportDialog({ file, onClose, onRestore }: ProjectFil
             <h2 id="project-file-dialog-title">Check this review before restoring it.</h2>
             <p>{file.name}</p>
           </div>
-          <button className="dialog-close" type="button" aria-label="Close project import" onClick={onClose}><X size={19} /></button>
+          <button data-dialog-initial-focus className="dialog-close" type="button" aria-label="Close project import" onClick={onClose}><X size={19} /></button>
         </header>
 
         {loading ? (

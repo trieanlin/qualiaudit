@@ -324,7 +324,7 @@ export function Reviewing({
   const hasRemoteProblem = remoteStatus === 'error' || interrupted || missingConsent
 
   return (
-    <div className="reviewing-page" aria-live="polite">
+    <div className="reviewing-page" aria-busy={!hasRemoteProblem && processed < excerpts.length}>
       <div className="review-orbit" aria-hidden="true"><span /><span /><EyeOff /></div>
       <span className="overline">INDEPENDENT REVIEW {hasRemoteProblem ? 'PAUSED' : 'IN PROGRESS'}</span>
       <h1>{hasRemoteProblem ? 'No silent retry.' : 'Creating a separate reading.'}</h1>
@@ -337,7 +337,7 @@ export function Reviewing({
       </p>
 
       {hasRemoteProblem ? (
-        <div className="remote-review-error">
+        <div className="remote-review-error" role="alert">
           <AlertTriangle />
           <div>
             <strong>{missingConsent ? 'The consent record is missing.' : interrupted ? 'The earlier request was interrupted or its outcome is unknown.' : remoteIssue?.message}</strong>
@@ -368,7 +368,15 @@ export function Reviewing({
             <span>{reviewerMode === 'mock' ? 'Deterministic mock reviewer' : 'OpenAI server-side reviewer'}</span>
             <strong>{reviewerMode === 'mock' ? `${processed} / ${excerpts.length} excerpts` : remoteStatus === 'sending' ? 'Awaiting structured review' : 'Preparing request'}</strong>
           </div>
-          <div className={reviewerMode === 'openai' ? 'progress-track indeterminate' : 'progress-track'}>
+          <div
+            className={reviewerMode === 'openai' ? 'progress-track indeterminate' : 'progress-track'}
+            role="progressbar"
+            aria-label={reviewerMode === 'mock' ? 'Independent review progress' : 'Remote independent review in progress'}
+            aria-valuemin={reviewerMode === 'mock' ? 0 : undefined}
+            aria-valuemax={reviewerMode === 'mock' ? excerpts.length : undefined}
+            aria-valuenow={reviewerMode === 'mock' ? processed : undefined}
+            aria-valuetext={reviewerMode === 'mock' ? `${processed} of ${excerpts.length} excerpts reviewed` : undefined}
+          >
             <span style={reviewerMode === 'mock' ? { width: `${percentage}%` } : undefined} />
           </div>
           <small>

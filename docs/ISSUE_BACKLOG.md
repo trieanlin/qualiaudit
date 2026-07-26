@@ -53,6 +53,7 @@ These are the first scoped issues to create when the repository receives a GitHu
 ## QA-08 — Accessibility audit of the complete review workflow
 
 **Phase:** Cross-cutting quality  
+**Status:** Engineering pass complete; assistive-technology matrix pending
 **Outcome:** The sample flow meets WCAG 2.2 AA expectations for keyboard, focus, semantics, contrast, zoom, and reduced motion.  
 **Acceptance:** Automated checks are supplemented by keyboard and screen-reader testing; issues are tracked per screen; no status relies on colour alone.
 
