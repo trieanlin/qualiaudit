@@ -12,6 +12,7 @@ import {
 import { useState } from 'react'
 import type { ReviewState } from '../hooks/useReviewState'
 import { useDialogAccessibility } from '../hooks/useDialogAccessibility'
+import { APPLICATION_VERSION_LABEL } from '../lib/appVersion'
 import { formatStorageSize, summariseLocalData } from '../lib/localData'
 
 interface LocalDataDialogProps {
@@ -135,7 +136,7 @@ export function LocalDataDialog({ state, onClose, onSaveProject, onClear }: Loca
               <strong>Local does not mean encrypted.</strong>
               <p>
                 Anyone or any software with access to this browser profile may be able to read the saved record.
-                QualiAudit v0.1 is not suitable for sensitive, identifiable or regulated research data.
+                QualiAudit {APPLICATION_VERSION_LABEL} is not suitable for sensitive, identifiable or regulated research data.
               </p>
             </div>
           </div>

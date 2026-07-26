@@ -2,7 +2,7 @@
 
 ## Supported version
 
-QualiAudit is currently an early v0.1 research prototype. Security fixes target the latest commit on the default branch.
+QualiAudit is currently an early v0.2 research prototype. Security fixes target the latest commit on the default branch.
 
 ## Reporting a vulnerability
 
