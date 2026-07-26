@@ -44,6 +44,11 @@ This roadmap treats product, methodological, governance, and engineering work as
 - [ ] Publish limitations and negative findings alongside workflow changes.
 - [ ] Develop method-specific guidance with qualitative-methods advisors.
 
+## Cross-cutting quality
+
+- [x] Accessibility engineering pass with automated semantic checks, keyboard interaction tests, focus management, responsive reflow review, and reduced-motion handling.
+- [ ] Complete and publish a task-based VoiceOver/Safari and NVDA/Firefox assistive-technology matrix before making a WCAG 2.2 AA conformance claim.
+
 ## Deliberately out of scope
 
 Automatic final themes, claims of AI validation, native proprietary project parsing, full-text autonomous analysis, public handling of sensitive data, and generic dashboard metrics remain outside the product direction unless strong research evidence changes the case.

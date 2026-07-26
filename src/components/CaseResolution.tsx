@@ -1,5 +1,6 @@
 import { ArrowLeft, ArrowRight, Check, CircleAlert, Eye, GitCompareArrows, MessageSquareText, UserRound } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
+import type { KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { categoryLabel, classifyCase } from '../lib/queue'
 import { decisionLabels } from '../lib/resolutions'
 import type {
@@ -25,6 +26,7 @@ interface CaseResolutionProps {
 }
 
 const CHANGED_DECISIONS = new Set<ResolutionDecision>(['accept_ai', 'keep_both', 'revise_code', 'revise_boundary', 'revise_codebook'])
+const DECISION_KEYS = Object.keys(decisionLabels) as ResolutionDecision[]
 
 const decisionDescriptions: Record<ResolutionDecision, string> = {
   keep_original: 'The first-pass reading remains most useful.',
@@ -76,6 +78,8 @@ export function CaseResolution({
       ?? defaultAffectedIds(initialCodeDefinition?.code ?? '', excerpts, human.excerpt_id),
   )
   const [showError, setShowError] = useState(false)
+  const decisionRefs = useRef<Partial<Record<ResolutionDecision, HTMLButtonElement | null>>>({})
+  const errorSummaryRef = useRef<HTMLDivElement>(null)
   const category = classifyCase(human, ai, codebook)
   const relevantCodes = useMemo(() => {
     const wanted = new Set([human.human_code, ai.primary_suggested_code, ai.alternative_code].filter(Boolean))
@@ -105,6 +109,25 @@ export function CaseResolution({
     else if (next !== 'revise_code') setFinalCode(human.human_code)
   }
 
+  const moveDecisionFocus = (
+    event: ReactKeyboardEvent<HTMLButtonElement>,
+    current: ResolutionDecision,
+  ) => {
+    if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.key)) return
+    event.preventDefault()
+    const currentIndex = DECISION_KEYS.indexOf(current)
+    const nextIndex = event.key === 'Home'
+      ? 0
+      : event.key === 'End'
+        ? DECISION_KEYS.length - 1
+        : event.key === 'ArrowLeft' || event.key === 'ArrowUp'
+          ? (currentIndex - 1 + DECISION_KEYS.length) % DECISION_KEYS.length
+          : (currentIndex + 1) % DECISION_KEYS.length
+    const next = DECISION_KEYS[nextIndex]
+    chooseDecision(next)
+    decisionRefs.current[next]?.focus()
+  }
+
   const chooseChangeCode = (nextCode: string) => {
     const next = codebook.find((item) => item.code === nextCode)
     if (!next) return
@@ -127,6 +150,7 @@ export function CaseResolution({
   const save = () => {
     if (!decision || rationale.trim().length < 8 || codebookChangeInvalid) {
       setShowError(true)
+      window.requestAnimationFrame(() => errorSummaryRef.current?.focus())
       return
     }
     const decidedAt = new Date().toISOString()
@@ -166,7 +190,13 @@ export function CaseResolution({
     <div className="page wide-page case-page">
       <button className="text-button back-button" type="button" onClick={onBack}><ArrowLeft size={16} /> Back to review queue</button>
       <div className="case-heading">
-        <div><span className={`category-badge category-${category}`}>{categoryLabel(category, project.analysisMode)}</span><span className="case-id">{human.excerpt_id} · {human.source_id}</span></div>
+        <div>
+          <span className={`category-badge category-${category}`}>{categoryLabel(category, project.analysisMode)}</span>
+          <h1 className="case-id">
+            <span className="sr-only">Review case</span>{' '}
+            {human.excerpt_id} · {human.source_id}
+          </h1>
+        </div>
         <span className={`uncertainty uncertainty-${ai.uncertainty}`}>{ai.uncertainty} AI uncertainty</span>
       </div>
 
@@ -210,10 +240,27 @@ export function CaseResolution({
       </section>
 
       <section className="resolution-section">
-        <div className="resolution-heading"><MessageSquareText /><div><span className="overline">HUMAN RESOLUTION</span><h2>What do you decide after seeing the comparison?</h2><p>The AI does not resolve this case. Your rationale becomes part of the audit trail.</p></div></div>
-        <div className="decision-grid">
-          {(Object.keys(decisionLabels) as ResolutionDecision[]).map((key) => (
-            <button type="button" className={decision === key ? 'selected' : ''} key={key} onClick={() => chooseDecision(key)}>
+        <div className="resolution-heading"><MessageSquareText /><div><span className="overline">HUMAN RESOLUTION</span><h2 id="resolution-decision-heading">What do you decide after seeing the comparison?</h2><p>The AI does not resolve this case. Your rationale becomes part of the audit trail.</p></div></div>
+        <div
+          className="decision-grid"
+          role="radiogroup"
+          aria-labelledby="resolution-decision-heading"
+          aria-invalid={showError && !decision ? 'true' : undefined}
+        >
+          {DECISION_KEYS.map((key, index) => (
+            <button
+              ref={(element) => {
+                decisionRefs.current[key] = element
+              }}
+              type="button"
+              role="radio"
+              aria-checked={decision === key}
+              tabIndex={decision === key || (!decision && index === 0) ? 0 : -1}
+              className={decision === key ? 'selected' : ''}
+              key={key}
+              onClick={() => chooseDecision(key)}
+              onKeyDown={(event) => moveDecisionFocus(event, key)}
+            >
               <span className="radio-mark">{decision === key && <Check size={14} />}</span>
               <span><strong>{decisionLabels[key]}</strong><small>{decisionDescriptions[key]}</small></span>
             </button>
@@ -243,8 +290,13 @@ export function CaseResolution({
               </label>
               <label className="field">
                 <span>Change author <b>Required</b></span>
-                <input value={changeAuthor} onChange={(event) => setChangeAuthor(event.target.value)} />
-                <small>Stored locally and included in project/audit exports.</small>
+                <input
+                  value={changeAuthor}
+                  aria-invalid={showError && changeAuthor.trim().length < 2 ? 'true' : undefined}
+                  aria-describedby="change-author-help"
+                  onChange={(event) => setChangeAuthor(event.target.value)}
+                />
+                <small id="change-author-help">Stored locally and included in project/audit exports.</small>
               </label>
             </div>
 
@@ -288,12 +340,21 @@ export function CaseResolution({
 
         <label className="field rationale-field">
           <span>Short rationale <b>Required</b></span>
-          <textarea rows={4} value={rationale} onChange={(event) => setRationale(event.target.value)} placeholder="What evidence or analytic consideration led to this decision?" />
-          <small>{rationale.length} characters · describe your reasoning, not whether the AI was “right”</small>
+          <textarea
+            rows={4}
+            value={rationale}
+            aria-invalid={showError && rationale.trim().length < 8 ? 'true' : undefined}
+            aria-describedby="resolution-rationale-help"
+            onChange={(event) => setRationale(event.target.value)}
+            placeholder="What evidence or analytic consideration led to this decision?"
+          />
+          <small id="resolution-rationale-help">{rationale.length} characters · describe your reasoning, not whether the AI was “right”</small>
         </label>
-        {showError && (!decision || rationale.trim().length < 8) && <p className="form-error"><CircleAlert size={15} /> Choose a decision and add a short rationale of at least 8 characters.</p>}
-        {showError && codebookChangeInvalid && (
-          <p className="form-error"><CircleAlert size={15} /> Complete the author, proposed definition guidance, at least one real change, and one affected excerpt.</p>
+        {showError && (!decision || rationale.trim().length < 8 || codebookChangeInvalid) && (
+          <div className="form-errors" ref={errorSummaryRef} role="alert" tabIndex={-1}>
+            {(!decision || rationale.trim().length < 8) && <p className="form-error"><CircleAlert size={15} /> Choose a decision and add a short rationale of at least 8 characters.</p>}
+            {codebookChangeInvalid && <p className="form-error"><CircleAlert size={15} /> Complete the author, proposed definition guidance, at least one real change, and one affected excerpt.</p>}
+          </div>
         )}
         <div className="resolution-footer">
           <span>{existing ? 'Saving will add a new timestamp to this decision.' : 'This action records your post-exposure decision.'}</span>

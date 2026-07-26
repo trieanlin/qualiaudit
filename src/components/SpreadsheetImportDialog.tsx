@@ -1,5 +1,6 @@
 import { CircleAlert, FileSpreadsheet, LockKeyhole, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import { useDialogAccessibility } from '../hooks/useDialogAccessibility'
 import {
   detectImportProfile,
   getImportProfile,
@@ -56,14 +57,7 @@ export function SpreadsheetImportDialog({ file, kind, downloadUrl, onClose, onIm
   const [detectedProfileId, setDetectedProfileId] = useState<ImportProfileId | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [onClose])
+  const { dialogRef, onDialogKeyDown } = useDialogAccessibility(onClose)
 
   useEffect(() => {
     let cancelled = false
@@ -162,7 +156,15 @@ export function SpreadsheetImportDialog({ file, kind, downloadUrl, onClose, onIm
 
   return (
     <div className="dialog-backdrop" role="presentation">
-      <section className="spreadsheet-dialog" role="dialog" aria-modal="true" aria-labelledby="spreadsheet-dialog-title">
+      <section
+        ref={dialogRef}
+        className="spreadsheet-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="spreadsheet-dialog-title"
+        tabIndex={-1}
+        onKeyDown={onDialogKeyDown}
+      >
         <header className="dialog-header">
           <div className="dialog-icon"><FileSpreadsheet size={20} /></div>
           <div>
@@ -170,7 +172,7 @@ export function SpreadsheetImportDialog({ file, kind, downloadUrl, onClose, onIm
             <h2 id="spreadsheet-dialog-title">Map workbook columns before import.</h2>
             <p>{file.name}</p>
           </div>
-          <button className="dialog-close" type="button" aria-label="Close Excel import" onClick={onClose}><X size={19} /></button>
+          <button data-dialog-initial-focus className="dialog-close" type="button" aria-label="Close Excel import" onClick={onClose}><X size={19} /></button>
         </header>
 
         {loading ? (
@@ -246,7 +248,8 @@ export function SpreadsheetImportDialog({ file, kind, downloadUrl, onClose, onIm
               <div className="mapping-heading"><div><span className="overline">PREVIEW</span><h3 id="preview-heading">Check the source before replacing current materials.</h3></div><span>First {Math.min(4, table.rows.length)} rows</span></div>
               <div className="table-scroll excel-preview">
                 <table className="data-table">
-                  <thead><tr>{table.headers.map((header, index) => <th key={`${index}-${header}`}>{header}</th>)}</tr></thead>
+                  <caption className="sr-only">Preview of the selected worksheet and header row</caption>
+                  <thead><tr>{table.headers.map((header, index) => <th scope="col" key={`${index}-${header}`}>{header}</th>)}</tr></thead>
                   <tbody>
                     {table.rows.slice(0, 4).map((row, rowIndex) => (
                       <tr key={rowIndex}>{table.headers.map((_, columnIndex) => <td key={columnIndex}>{row[columnIndex]}</td>)}</tr>

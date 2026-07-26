@@ -29,7 +29,7 @@ describe('codebook change resolution', () => {
       />,
     )
 
-    await user.click(screen.getByRole('button', { name: /Revise codebook/ }))
+    await user.click(screen.getByRole('radio', { name: /Revise codebook/ }))
     const frozenBefore = screen.getByText('FROZEN BEFORE').closest('article')
     expect(frozenBefore).not.toBeNull()
     expect(within(frozenBefore as HTMLElement).getByText(originalDefinition ?? '')).toBeInTheDocument()
@@ -88,7 +88,7 @@ describe('codebook change resolution', () => {
       />,
     )
 
-    await user.click(screen.getByRole('button', { name: /Revise codebook/ }))
+    await user.click(screen.getByRole('radio', { name: /Revise codebook/ }))
     await user.type(
       screen.getByPlaceholderText('What evidence or analytic consideration led to this decision?'),
       'The boundary needs clearer guidance.',

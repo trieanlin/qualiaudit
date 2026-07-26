@@ -76,9 +76,9 @@ export function ReviewQueue({ project, codebook, excerpts, reviews, resolutions,
       <div className="queue-controls">
         <div className="filter-group" role="group" aria-label="Filter review cases">
           <span><Filter size={15} /> Show</span>
-          <button className={filter === 'attention' ? 'active' : ''} onClick={() => setFilter('attention')}>Needs reflection <b>{attentionItems.length}</b></button>
-          <button className={filter === 'all' ? 'active' : ''} onClick={() => setFilter('all')}>All cases <b>{items.length}</b></button>
-          <button className={filter === 'resolved' ? 'active' : ''} onClick={() => setFilter('resolved')}>Resolved <b>{resolvedItems.length}</b></button>
+          <button type="button" aria-pressed={filter === 'attention'} className={filter === 'attention' ? 'active' : ''} onClick={() => setFilter('attention')}>Needs reflection <b>{attentionItems.length}</b></button>
+          <button type="button" aria-pressed={filter === 'all'} className={filter === 'all' ? 'active' : ''} onClick={() => setFilter('all')}>All cases <b>{items.length}</b></button>
+          <button type="button" aria-pressed={filter === 'resolved'} className={filter === 'resolved' ? 'active' : ''} onClick={() => setFilter('resolved')}>Resolved <b>{resolvedItems.length}</b></button>
         </div>
         <span className="queue-helper"><MessageCircleQuestion size={15} /> Start with a reading that changes what you notice.</span>
       </div>
