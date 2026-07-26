@@ -10,6 +10,11 @@ import type {
 } from '../types'
 import { categoryLabel, classifyCase } from './queue'
 import { decisionLabels } from './resolutions'
+import {
+  buildSecondCoderComparisons,
+  secondCoderRelationshipLabel,
+  summariseSecondCoderComparisons,
+} from './secondCoder'
 
 export interface HtmlAuditReportOptions {
   includeSourceText: boolean
@@ -101,14 +106,20 @@ export function buildAuditMethodStatement(
   project: ProjectBrief,
   excerptCount: number,
   reviewer?: AiReview,
+  secondCoderCount = 0,
 ): string {
   const usedOpenAi = reviewer?.provider === 'openai'
   const reviewerDescription = usedOpenAi
     ? `the ${reviewer?.model ?? 'configured OpenAI'} reviewer`
     : 'the deterministic local mock reviewer'
-  return project.analysisMode === 'reflexive'
+  const base = project.analysisMode === 'reflexive'
     ? `We used QualiAudit to support reflexive engagement with an independently generated AI reading of ${excerptCount} coded excerpts. Human first-pass interpretations were frozen before review and withheld from ${reviewerDescription}. Divergence was treated as a prompt for reflexivity rather than an error or accuracy measure. Researchers retained final interpretive authority and documented post-exposure decisions and researcher-authored memos in an audit log.`
     : `We used QualiAudit to compare human first-pass coding with an independently generated AI reading of ${excerptCount} coded excerpts. Human codes and rationales were frozen and withheld from ${reviewerDescription}. Descriptive overlap and divergence were used to prioritise human review, not as validation or intercoder reliability. Researchers retained final decision authority and documented post-exposure decisions and researcher-authored memos in an audit log.`
+  if (secondCoderCount === 0) return base
+  const secondHumanSentence = project.analysisMode === 'reflexive'
+    ? ` Optional second-human readings were available for ${secondCoderCount} excerpts and were documented separately as interpretive overlap or alternative readings; they were not sent to the AI reviewer.`
+    : ` Optional second-human coding was available for ${secondCoderCount} excerpts and was reported separately from human–AI comparison; no reliability coefficient was inferred from this subset.`
+  return `${base}${secondHumanSentence}`
 }
 
 export function buildHtmlAuditReport(
@@ -131,7 +142,9 @@ export function buildHtmlAuditReport(
   const reviewerLabel = usedOpenAi
     ? `${reviewer.model ?? 'configured model'} via OpenAI API`
     : reviewer?.model ?? reviewer?.reviewer ?? 'Not run'
-  const methodStatement = buildAuditMethodStatement(project, excerpts.length, reviewer)
+  const secondCoderComparisons = buildSecondCoderComparisons(excerpts)
+  const secondCoderSummary = summariseSecondCoderComparisons(secondCoderComparisons)
+  const methodStatement = buildAuditMethodStatement(project, excerpts.length, reviewer, secondCoderSummary.total)
   const resolutionByExcerpt = new Map(resolutions.map((resolution) => [resolution.excerpt_id, resolution]))
   const reviewByExcerpt = new Map(reviews.map((review) => [review.excerpt_id, review]))
   const memosByExcerpt = new Map<string, ReflexiveMemo[]>()
@@ -235,6 +248,20 @@ export function buildHtmlAuditReport(
     </article>
   `).join('')
 
+  const secondCoderComparisonsHtml = secondCoderComparisons.map((comparison) => `
+    <article class="decision second-human-record">
+      <div class="item-topline">
+        <span class="pill">${text(secondCoderRelationshipLabel(comparison.relationship, project.analysisMode))}</span>
+        <span>${text(comparison.excerpt_id)} · ${text(comparison.source_id)}</span>
+      </div>
+      <dl class="compact-list">
+        <div><dt>First human</dt><dd>${text(comparison.first_coder_code)}</dd></div>
+        <div><dt>Second human</dt><dd>${text(comparison.second_coder_code)}</dd></div>
+        <div><dt>Second-human rationale</dt><dd>${prose(comparison.second_coder_rationale, 'No rationale supplied.')}</dd></div>
+      </dl>
+    </article>
+  `).join('')
+
   const pendingItems = pendingExcerpts.map((excerpt) => (
     `<li><strong>${text(excerpt.excerpt_id)}</strong> · no post-exposure decision recorded</li>`
   ))
@@ -265,8 +292,6 @@ export function buildHtmlAuditReport(
             <p class="code">${text(human.human_code)}</p>
             <p>${prose(human.human_rationale, 'No rationale supplied.')}</p>
             <p class="meta">Confidence: ${text(human.human_confidence, 'Not stated')}</p>
-            ${human.second_coder_code ? `<p class="meta">Second coder: ${text(human.second_coder_code)}</p>` : ''}
-            ${human.second_coder_rationale ? `<p class="meta">Second-coder rationale: ${prose(human.second_coder_rationale)}</p>` : ''}
           </section>
           <section>
             <h4>Independent AI reading</h4>
@@ -279,9 +304,22 @@ export function buildHtmlAuditReport(
                 <p class="meta">Uncertainty: ${text(ai.uncertainty)} · More context: ${ai.needs_more_context ? 'requested' : 'not requested'}</p>
                 ${ai.possible_codebook_issue ? `<p class="meta">Possible codebook issue: ${prose(ai.possible_codebook_issue)}</p>` : ''}
               `
-              : '<p class="empty">No independent review recorded.</p>'}
+            : '<p class="empty">No independent review recorded.</p>'}
           </section>
         </div>
+        ${human.second_coder_code
+          ? `
+            <section class="case-second-human">
+              <h4>Separate second-human record</h4>
+              <p class="code">${text(human.second_coder_code)}</p>
+              <p>${prose(human.second_coder_rationale, 'No second-human rationale supplied.')}</p>
+              <p class="meta">${text(secondCoderRelationshipLabel(
+                human.second_coder_code === human.human_code ? 'same_code' : 'different_code',
+                project.analysisMode,
+              ))}. Withheld from the AI reviewer and excluded from human–AI queue categories.</p>
+            </section>
+          `
+          : ''}
         <section class="case-decision">
           <h4>Human resolution</h4>
           ${resolution
@@ -371,6 +409,8 @@ export function buildHtmlAuditReport(
     .before-after, .case-readings { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; margin-top: 18px; border: 1px solid var(--line); background: var(--line); }
     .before-after section, .case-readings section { padding: 18px; background: var(--panel); }
     .before-after section + section { background: #f4f7f3; }
+    .second-human-safeguard, .case-second-human { border-color: #b8c8bd; background: var(--sage); }
+    .case-second-human { margin-top: 12px; padding: 18px; border: 1px solid #b8c8bd; }
     .compact-list { margin: 16px 0 0; }
     .compact-list div { display: grid; grid-template-columns: 180px 1fr; gap: 12px; padding: 7px 0; border-top: 1px solid #e4e8e5; }
     .compact-list dd { margin: 0; }
@@ -423,7 +463,7 @@ export function buildHtmlAuditReport(
         <div><dt>Analysis approach</dt><dd>${text(project.analysisMode === 'reflexive' ? 'Reflexive thematic analysis' : 'Codebook / framework analysis')}</dd></div>
         <div><dt>Project created</dt><dd>${formatDate(project.createdAt)}</dd></div>
         <div><dt>Report exported</dt><dd>${formatDate(exportedAt)}</dd></div>
-        <div><dt>Report format</dt><dd>QualiAudit HTML v0.2</dd></div>
+        <div><dt>Report format</dt><dd>QualiAudit HTML v0.3</dd></div>
       </dl>
       <p class="privacy-notice"><strong>Source-text setting.</strong> ${escapeHtml(privacyLabel)}</p>
       <p class="screen-note">This file is self-contained and makes no network requests. Use your browser’s Print command to create a paper or PDF copy.</p>
@@ -473,6 +513,24 @@ export function buildHtmlAuditReport(
     </section>
 
     <section class="section">
+      <div class="section-heading">
+        <div><span class="eyebrow">Second-human comparison</span><h2>Human readings kept separate from AI review</h2></div>
+        <p>${secondCoderSummary.total} optional record${secondCoderSummary.total === 1 ? '' : 's'}; excluded from human–AI queue categories.</p>
+      </div>
+      <article class="card second-human-safeguard">
+        <p><strong>Analytical boundary.</strong> These records were frozen before AI exposure and withheld from the AI reviewer. ${project.analysisMode === 'codebook'
+          ? 'Counts are descriptive only; no intercoder reliability coefficient is calculated from this optional subset.'
+          : 'Alternative human readings are documented as interpretive resources rather than coding errors.'}</p>
+        <dl class="compact-list">
+          <div><dt>Total optional records</dt><dd>${secondCoderSummary.total}</dd></div>
+          <div><dt>${project.analysisMode === 'reflexive' ? 'Interpretive overlap' : 'Direct code overlap'}</dt><dd>${secondCoderSummary.sameCode}</dd></div>
+          <div><dt>${project.analysisMode === 'reflexive' ? 'Alternative readings' : 'Different interpretations'}</dt><dd>${secondCoderSummary.differentCode}</dd></div>
+        </dl>
+      </article>
+      <div class="item-list">${secondCoderComparisonsHtml || '<p class="empty">No optional second-human records were supplied.</p>'}</div>
+    </section>
+
+    <section class="section">
       <div class="section-heading"><div><span class="eyebrow">Codebook</span><h2>Frozen analytic guidance</h2></div><p>${codebook.length} definitions used during independent review.</p></div>
       <div class="definition-grid">${codebookHtml}</div>
     </section>
@@ -514,6 +572,7 @@ export function buildHtmlAuditReport(
       <ul>
         <li>The AI reading does not validate qualitative findings, establish correctness, or replace a second human coder.</li>
         <li>Descriptive human–AI overlap is not intercoder reliability. Cohen’s kappa is not calculated for the mock reviewer.</li>
+        ${secondCoderSummary.total > 0 ? '<li>The optional second-human records cover only a subset of excerpts and are reported descriptively, separately from AI review.</li>' : ''}
         <li>${usedOpenAi ? 'A remote model was used; interpret its output under the recorded provider, consent, governance, and retention conditions.' : 'The deterministic mock reviewer demonstrates workflow and auditability, not model quality.'}</li>
         <li>Human decisions made after seeing AI output may be affected by anchoring or automation bias.</li>
         <li>${options.includeSourceText ? 'This report contains source excerpts and evidence quotes. Govern it like the underlying research data.' : 'Source excerpts and evidence quotes were omitted, but codes, rationales, and reflexive memos may still contain sensitive or identifying information.'}</li>

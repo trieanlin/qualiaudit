@@ -84,3 +84,10 @@ These are the first scoped issues to create when the repository receives a GitHu
 **Status:** Complete
 **Outcome:** After recording a human decision, a researcher can append a reflection about what the comparison made visible, complicated, or left unresolved.
 **Acceptance:** Each memo records author and timestamp plus the excerpt and decision snapshot it followed; saved memos are append-only; project files and JSON/HTML audits preserve them; local-data and restore summaries disclose them; neither browser nor server reviewer payloads include them.
+
+## QA-13 — Keep optional second-human comparison separate from AI review
+
+**Phase:** Richer audit practice
+**Status:** Complete
+**Outcome:** A researcher can inspect optional second-human coding without combining it with the independent AI review or implying that AI replaced a human coder.
+**Acceptance:** Second-human codes and rationales remain frozen and withheld from the reviewer; queue, case, audit, CSV, JSON, and HTML outputs preserve an explicit analytical boundary; method-sensitive labels avoid error language in reflexive mode; optional-subset counts do not produce an intercoder-reliability coefficient.

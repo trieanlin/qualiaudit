@@ -6,6 +6,34 @@ import { buildBlindReviewPayload, runMockBlindReview } from '../lib/reviewer'
 import { CaseResolution } from './CaseResolution'
 
 describe('codebook change resolution', () => {
+  it('presents the optional second-human record separately from the AI comparison', () => {
+    const human = SAMPLE_EXCERPTS[1]
+    const ai = runMockBlindReview(
+      buildBlindReviewPayload(SAMPLE_PROJECT, SAMPLE_CODEBOOK, SAMPLE_EXCERPTS),
+    )[1]
+
+    render(
+      <CaseResolution
+        project={SAMPLE_PROJECT}
+        codebook={SAMPLE_CODEBOOK}
+        human={human}
+        excerpts={SAMPLE_EXCERPTS}
+        ai={ai}
+        memos={[]}
+        onBack={vi.fn()}
+        onSave={vi.fn()}
+        onAddMemo={vi.fn()}
+      />,
+    )
+
+    const secondHumanHeading = screen.getByRole('heading', { name: 'A separate human comparison' })
+    const secondHumanSection = secondHumanHeading.closest('section')
+    expect(secondHumanSection).not.toBeNull()
+    expect(within(secondHumanSection as HTMLElement).getByText('Different human interpretation')).toBeInTheDocument()
+    expect(within(secondHumanSection as HTMLElement).getByText(/withheld from the AI reviewer/)).toBeInTheDocument()
+    expect(screen.getByText('AI reading').closest('section')).not.toContainElement(secondHumanSection)
+  })
+
   it('records before/after guidance and unresolved recoding without changing the frozen codebook', async () => {
     const user = userEvent.setup()
     const onSave = vi.fn()

@@ -44,5 +44,7 @@ describe('printable audit report controls', () => {
 
     expect(includeSource.checked).toBe(true)
     expect(screen.getByText('Full analytic record · contains quoted source data')).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Human readings kept separate from AI review' })).toBeTruthy()
+    expect(screen.getByText(/no intercoder reliability coefficient is calculated/)).toBeTruthy()
   })
 })

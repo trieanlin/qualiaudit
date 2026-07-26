@@ -8,9 +8,11 @@ import {
   GitCompareArrows,
   MessageCircleQuestion,
   Sparkles,
+  UsersRound,
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { categoryLabel, classifyCase, QUEUE_ORDER } from '../lib/queue'
+import { buildSecondCoderComparisons, summariseSecondCoderComparisons } from '../lib/secondCoder'
 import type {
   AiReview,
   CodeDefinition,
@@ -48,6 +50,10 @@ export function ReviewQueue({ project, codebook, excerpts, reviews, resolutions,
 
   const aligned = items.filter((item) => item.category === 'aligned').length
   const related = items.filter((item) => item.category === 'partial').length
+  const secondCoderSummary = useMemo(
+    () => summariseSecondCoderComparisons(buildSecondCoderComparisons(excerpts)),
+    [excerpts],
+  )
 
   return (
     <div className="page wide-page queue-page">
@@ -70,6 +76,27 @@ export function ReviewQueue({ project, codebook, excerpts, reviews, resolutions,
         <section className="method-summary reflexive-summary">
           <Sparkles />
           <div><strong>Interpretive comparison, not an accuracy test</strong><p>Use overlap, tension, and uncertainty to make your analytic position more visible.</p></div>
+        </section>
+      )}
+
+      {secondCoderSummary.total > 0 && (
+        <section className="second-human-summary" aria-labelledby="second-human-summary-heading">
+          <div className="second-human-summary-heading">
+            <span><UsersRound /></span>
+            <div>
+              <small>OPTIONAL PRE-AI RECORD · ANALYSED SEPARATELY</small>
+              <h2 id="second-human-summary-heading">Second-human comparison</h2>
+            </div>
+          </div>
+          <dl>
+            <div><dt>Records</dt><dd>{secondCoderSummary.total}</dd></div>
+            <div><dt>{project.analysisMode === 'reflexive' ? 'Interpretive overlap' : 'Direct code overlap'}</dt><dd>{secondCoderSummary.sameCode}</dd></div>
+            <div><dt>{project.analysisMode === 'reflexive' ? 'Alternative readings' : 'Different interpretations'}</dt><dd>{secondCoderSummary.differentCode}</dd></div>
+          </dl>
+          <p>
+            These descriptive human–human records are not included in the AI queue categories or human–AI overlap count.
+            {project.analysisMode === 'codebook' ? ' No intercoder reliability coefficient is inferred from this optional subset.' : ' Divergence is preserved as interpretive material, not labelled as error.'}
+          </p>
         </section>
       )}
 

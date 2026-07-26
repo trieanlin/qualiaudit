@@ -37,12 +37,13 @@ The browser-only demo supports a complete synthetic workflow while keeping impor
 5. Choose the no-transmission local reviewer, or review an explicit provider disclosure and consent to an optional server-side reviewer.
 6. Prioritise divergence, ambiguity, missing context, segment boundaries, and confidence cases.
 7. Record one of nine human resolution decisions with a required rationale.
-8. Add append-only researcher reflexive memos linked to a recorded decision without sending them back to the reviewer.
-9. When revising the codebook, record an append-only before/after change event, its author, affected excerpts, and unresolved recoding work without rewriting the frozen snapshot.
-10. Inspect the decision log, reflexive memo log, codebook-change ledger, and reviewer provenance.
-11. Export a reviewed coding table as CSV, a machine-readable audit bundle as JSON, or a self-contained printable HTML report.
-12. Save a versioned QualiAudit project file and restore the same review in another browser session.
-13. Inspect the locally retained record and explicitly delete it from the browser.
+8. If an optional second-human record exists, inspect its overlap or alternative reading in a separate pre-AI comparison that does not affect the AI queue category.
+9. Add append-only researcher reflexive memos linked to a recorded decision without sending them back to the reviewer.
+10. When revising the codebook, record an append-only before/after change event, its author, affected excerpts, and unresolved recoding work without rewriting the frozen snapshot.
+11. Inspect the separate second-human comparison, decision log, reflexive memo log, codebook-change ledger, and reviewer provenance.
+12. Export a reviewed coding table as CSV, a machine-readable audit bundle as JSON, or a self-contained printable HTML report.
+13. Save a versioned QualiAudit project file and restore the same review in another browser session.
+14. Inspect the locally retained record and explicitly delete it from the browser.
 
 Working state is saved in browser `localStorage`. **Data & privacy** shows the saved project, stage, record counts, and approximate size; deletion removes QualiAudit’s own browser record after confirmation without clearing unrelated site data. A resumable `.qualiaudit.json` project file can be downloaded explicitly; it contains the full review state, including human judgments, decision history, and codebook-change history. The sample’s default path uses no account, API key, backend review call, or third-party model.
 
@@ -52,11 +53,11 @@ QualiAudit supports two framings in the project brief.
 
 ### Codebook / Framework Analysis
 
-The queue can show descriptive code overlap, related readings, codebook ambiguity, and consistency-relevant information. It explicitly distinguishes comparison with an AI reading from intercoder reliability and does not calculate Cohen’s kappa for the mock AI review.
+The queue can show descriptive code overlap, related readings, codebook ambiguity, and consistency-relevant information. It explicitly distinguishes comparison with an AI reading from intercoder reliability and does not calculate Cohen’s kappa for the mock AI review. Optional second-human records are summarised separately as direct overlap or different human interpretations; the prototype does not infer a reliability coefficient from that incomplete subset.
 
 ### Reflexive Thematic Analysis
 
-The interface switches to language such as *interpretive overlap*, *related readings*, and *alternative reading*. It avoids accuracy and correct/incorrect claims, omits kappa, and presents divergence as material for reflexivity and potentially productive disagreement.
+The interface switches to language such as *interpretive overlap*, *related readings*, and *alternative reading*. It avoids accuracy and correct/incorrect claims, omits kappa, and presents divergence as material for reflexivity and potentially productive disagreement. A second human’s divergent code is likewise described as an *alternative human reading*, never as an error.
 
 Changing the method in **Project brief** updates the queue framing, comparison labels, audit statement, and methodological notes.
 
@@ -109,7 +110,7 @@ npm run check:release
 npm run check
 ```
 
-The test suite covers validation, comma/semicolon/tab-delimited parsing, Unicode and structural import failures, multi-code and segment-boundary diagnostics, blind payload construction, deterministic review structure, explicit provider consent, server-side payload re-allowlisting, strict provider-output checks, method-aware queue labels, comparison categories, spreadsheet and research-tool profile mapping, fictional workbook fixtures, versioned project-file recovery and migration, append-only reflexive memos and codebook-change events, explicit browser-record deletion, CSV/JSON audit data, escaped privacy-minimised HTML reports, representative `axe-core` checks, keyboard interaction patterns, modal focus containment, and progress semantics.
+The test suite covers validation, comma/semicolon/tab-delimited parsing, Unicode and structural import failures, multi-code and segment-boundary diagnostics, blind payload construction, deterministic review structure, explicit provider consent, server-side payload re-allowlisting, strict provider-output checks, method-aware queue labels, comparison categories, analytically separate second-human records, spreadsheet and research-tool profile mapping, fictional workbook fixtures, versioned project-file recovery and migration, append-only reflexive memos and codebook-change events, explicit browser-record deletion, CSV/JSON audit data, escaped privacy-minimised HTML reports, representative `axe-core` checks, keyboard interaction patterns, modal focus containment, and progress semantics.
 
 The [accessibility engineering audit](docs/ACCESSIBILITY_AUDIT.md) records what has been checked and what remains. The project does not claim formal WCAG conformance while the VoiceOver, NVDA, zoom, and cross-browser assistive-technology matrix is still pending.
 
@@ -135,6 +136,8 @@ The **Save project** action creates a resumable, versioned QualiAudit JSON file.
 Choosing **Revise codebook** creates a new ledger event rather than editing the frozen codebook. The event preserves the frozen guidance beside the proposed guidance, records its author and rationale, identifies affected excerpts, and keeps those excerpts visible as unresolved recoding work. Later edits create additional events so prior reasoning remains inspectable.
 
 After recording a case decision, the researcher can add one or more append-only reflexive memos. Each memo preserves its author, timestamp, linked excerpt, and the decision snapshot it followed. Memos remain on the human side of the review boundary and appear in project files and JSON/HTML audit exports, but not in the independent reviewer payload.
+
+Optional second-human codes and rationales are frozen with the first-pass record but withheld from the AI reviewer. The queue shows only a separate descriptive summary; the case view and audit keep the human–human record in its own section. These counts do not alter human–AI categories, claim correctness, or silently become an intercoder-reliability statistic. CSV, JSON audit schema v0.5, and HTML report v0.3 exports preserve this analytical boundary.
 
 The **Data & privacy** action makes automatic browser retention visible and offers a confirmed **Delete local review** control. Browser deletion does not delete `.qualiaudit.json`, CSV, JSON, or other files already downloaded to the device.
 
@@ -175,6 +178,7 @@ The current prototype does not:
 - The current first-pass schema accepts one primary human code per excerpt. Multi-code cells are reported for human correction rather than silently flattened.
 - Human decisions after AI exposure may be influenced by automation bias even when the review is blind. QualiAudit records changes; it cannot remove that influence.
 - Descriptive human–AI overlap is not intercoder reliability, methodological validation, or evidence of correctness.
+- Optional second-human records may cover only a non-random subset of excerpts. QualiAudit reports their same/different-code counts descriptively and does not infer intercoder reliability from them.
 - The draft methods statement must be adapted to the actual method, model, provider, governance, and institutional requirements.
 
 ## Project documents
