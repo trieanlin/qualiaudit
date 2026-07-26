@@ -11,6 +11,13 @@ npm run check
 
 The release check reports rule names and affected scopes without printing a suspected secret value. It scans tracked text files, the patch history reachable from `HEAD`, and commit identity metadata.
 
+## Version and compatibility
+
+- [ ] `package.json`, `package-lock.json`, the in-app version label, and portable-project application metadata describe the same release.
+- [ ] The changelog and release notes state the completed scope and the remaining research, governance, accessibility, and data-security limits.
+- [ ] Existing browser records and supported project-file versions still restore successfully.
+- [ ] Reviewer, prompt, consent, project-file, memo, ledger, and audit schema identifiers change only when their underlying contract changes and a compatibility path is defined.
+
 ## Identity and local-machine information
 
 - [ ] `git log --format=fuller` uses a GitHub-provided `@users.noreply.github.com` address for authors and committers.

@@ -99,6 +99,10 @@ describe('portable project files', () => {
       format: 'qualiaudit-project',
       schema_version: 3,
       exported_at: '2026-07-25T09:05:00.000Z',
+      application: {
+        name: 'QualiAudit',
+        version: '0.2.0',
+      },
     })
     expect(restored.state.view).toBe('audit')
     expect(restored.state.frozen?.humanCoding).toHaveLength(8)

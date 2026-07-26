@@ -14,6 +14,7 @@ import type {
   ResolutionDecision,
   ReviewerMode,
 } from '../types'
+import { APPLICATION_VERSION } from './appVersion'
 import { REVIEWER_CONSENT_VERSION } from './reviewerProtocol'
 
 export const PROJECT_FILE_FORMAT = 'qualiaudit-project'
@@ -420,7 +421,7 @@ export function buildPortableProjectFile(state: ReviewState, exportedAt = new Da
     exported_at: exportedAt,
     application: {
       name: 'QualiAudit',
-      version: '0.1.0',
+      version: APPLICATION_VERSION,
     },
     state: structuredClone(state),
   }

@@ -4,6 +4,10 @@ All notable changes to QualiAudit are documented here. The project follows [Sema
 
 ## [Unreleased]
 
+No unreleased changes yet.
+
+## [0.2.0] - 2026-07-26
+
 ### Added
 
 - An optional server-side OpenAI Responses API adapter with no provider key in browser code.

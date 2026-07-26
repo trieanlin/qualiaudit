@@ -14,6 +14,12 @@ The demo uses fictional data and defaults to a reviewer that runs entirely in th
 
 ![QualiAudit review queue](docs/screenshots/review-queue.jpg)
 
+## Current release
+
+QualiAudit v0.2.0 adds trustworthy tabular import, portable local project files, an optional consent-gated server reviewer boundary, richer human-led audit records, safe queue triage, printable HTML reporting, and an accessibility engineering pass. Read the [v0.2.0 release notes](docs/RELEASE_NOTES_0.2.0.md).
+
+This remains a research prototype. The release does not claim suitability for sensitive research data, institutional approval, model validity, intercoder reliability, or WCAG conformance.
+
 ## Why this project exists
 
 Researchers already doing qualitative coding in Excel, NVivo, MAXQDA, or ATLAS.ti may want a structured way to question code application, examine conceptual overlap, or disclose the influence of AI. Most AI coding interfaces optimise throughput or present model output as an answer. QualiAudit instead optimises for interpretive visibility:
@@ -201,6 +207,7 @@ The current prototype does not:
 - [Accessibility engineering audit](docs/ACCESSIBILITY_AUDIT.md)
 - [Issue-ready backlog](docs/ISSUE_BACKLOG.md)
 - [Release privacy and secret checklist](docs/RELEASE_CHECKLIST.md)
+- [v0.2.0 release notes](docs/RELEASE_NOTES_0.2.0.md)
 
 ## Contributing
 

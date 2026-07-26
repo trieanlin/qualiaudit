@@ -1,4 +1,5 @@
 import { BookOpen, Check, ClipboardCheck, FileDown, FileSearch, FlaskConical, RotateCcw, ShieldCheck } from 'lucide-react'
+import { APPLICATION_VERSION_LABEL } from '../lib/appVersion'
 import type { AnalysisMode, AppView, ProjectBrief } from '../types'
 
 interface ShellProps {
@@ -40,7 +41,7 @@ export function AppHeader({
           <span>Q</span>
         </span>
         <span className="brand-name">QualiAudit</span>
-        <span className="version-chip">v0.1</span>
+        <span className="version-chip">{APPLICATION_VERSION_LABEL}</span>
       </button>
       <div className="header-actions">
         <span className="local-chip"><span className="status-dot" /> Local browser session</span>

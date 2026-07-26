@@ -37,6 +37,8 @@ This roadmap treats product, methodological, governance, and engineering work as
 - [x] Researcher-authored reflexive memos linked to decision events.
 - [x] Optional second-human-coder comparison kept analytically separate from AI review.
 
+Phases 1–3 form the v0.2.0 release scope. The remaining items below require human evaluation, advisor input, assistive-technology testing, or institutional review; they are not represented as completed by the software release.
+
 ## Phase 4 — research and evaluation
 
 - [ ] Usability study with doctoral and professional qualitative researchers.
