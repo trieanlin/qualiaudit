@@ -5,6 +5,7 @@ import type {
   FrozenSnapshot,
   HumanCodedExcerpt,
   ProjectBrief,
+  ReflexiveMemo,
   Resolution,
 } from '../types'
 import { toCsv } from './csv'
@@ -73,13 +74,23 @@ export function buildAuditBundle(args: {
   frozen: FrozenSnapshot
   reviews: AiReview[]
   resolutions: Resolution[]
+  reflexiveMemos: ReflexiveMemo[]
   codebookChanges: CodebookChange[]
 }) {
-  const { project, codebook, excerpts, frozen, reviews, resolutions, codebookChanges } = args
+  const {
+    project,
+    codebook,
+    excerpts,
+    frozen,
+    reviews,
+    resolutions,
+    reflexiveMemos,
+    codebookChanges,
+  } = args
   const firstReview = reviews[0]
   const usedOpenAi = firstReview?.provider === 'openai'
   return {
-    schema_version: 'qualiaudit-audit-v0.3',
+    schema_version: 'qualiaudit-audit-v0.4',
     exported_at: new Date().toISOString(),
     project,
     methodological_safeguards: {
@@ -92,6 +103,7 @@ export function buildAuditBundle(args: {
         'second_coder_code',
         'second_coder_rationale',
         'final_decision',
+        'reflexive_memos',
       ],
       ai_has_final_decision_authority: false,
     },
@@ -113,6 +125,7 @@ export function buildAuditBundle(args: {
     reviewed_coding_table: buildReviewedRows(excerpts, reviews, resolutions),
     ai_reviews: reviews,
     decision_log: resolutions,
+    reflexive_memos: reflexiveMemos,
     codebook_change_ledger: codebookChanges,
     unresolved_recoding_work: codebookChanges.flatMap((change) => (
       change.unresolved_recode_excerpt_ids.map((excerptId) => ({

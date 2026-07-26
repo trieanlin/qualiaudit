@@ -107,6 +107,17 @@ export interface Resolution {
   changed_after_ai_exposure: boolean
 }
 
+export interface ReflexiveMemo {
+  memo_version: 'qualiaudit-reflexive-memo-v0.1'
+  id: string
+  excerpt_id: string
+  resolution_decided_at: string
+  decision: ResolutionDecision
+  author: string
+  body: string
+  created_at: string
+}
+
 export interface CodebookChange {
   ledger_version: 'qualiaudit-codebook-change-v0.1'
   id: string

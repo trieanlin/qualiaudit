@@ -24,6 +24,7 @@ describe('printable audit report controls', () => {
         }}
         reviews={reviews}
         resolutions={[]}
+        reflexiveMemos={[]}
         codebookChanges={[]}
         onBack={vi.fn()}
         onOpenCase={vi.fn()}

@@ -12,6 +12,7 @@ function savedState(): ReviewState {
     frozen: null,
     reviews: [],
     resolutions: [],
+    reflexiveMemos: [],
     codebookChanges: [],
     selectedExcerptId: null,
     reviewerMode: 'mock',
@@ -43,5 +44,14 @@ describe('browser review persistence', () => {
   it('does not retain an empty landing state', () => {
     renderHook(() => useReviewState())
     expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
+  })
+
+  it('restores older browser state with an empty reflexive memo log', () => {
+    const olderState: Partial<ReviewState> = savedState()
+    delete olderState.reflexiveMemos
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(olderState))
+
+    const { result } = renderHook(() => useReviewState())
+    expect(result.current.state.reflexiveMemos).toEqual([])
   })
 })

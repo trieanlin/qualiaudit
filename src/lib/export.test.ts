@@ -13,6 +13,16 @@ describe('audit exports', () => {
     decided_at: '2026-07-22T11:00:00.000Z',
     changed_after_ai_exposure: true,
   }
+  const memo = {
+    memo_version: 'qualiaudit-reflexive-memo-v0.1' as const,
+    id: 'memo-syn-002',
+    excerpt_id: 'SYN-002',
+    resolution_decided_at: resolution.decided_at,
+    decision: resolution.decision,
+    author: 'Researcher',
+    body: 'The disagreement made the privacy implications of family involvement more visible.',
+    created_at: '2026-07-22T11:05:00.000Z',
+  }
 
   it('keeps unresolved rows and resolved decisions in the reviewed coding table', () => {
     const rows = buildReviewedRows(SAMPLE_EXCERPTS, reviews, [resolution])
@@ -30,12 +40,15 @@ describe('audit exports', () => {
       frozen: { frozenAt: '2026-07-22T09:30:00.000Z', project: SAMPLE_PROJECT, codebook: SAMPLE_CODEBOOK, humanCoding: SAMPLE_EXCERPTS },
       reviews,
       resolutions: [resolution],
+      reflexiveMemos: [memo],
       codebookChanges: [],
     })
 
     expect(bundle.methodological_safeguards.ai_has_final_decision_authority).toBe(false)
     expect(bundle.methodological_safeguards.withheld_from_reviewer).toContain('human_code')
+    expect(bundle.methodological_safeguards.withheld_from_reviewer).toContain('reflexive_memos')
     expect(bundle.human_decisions_changed_after_ai_exposure).toHaveLength(1)
+    expect(bundle.reflexive_memos).toEqual([memo])
     expect(bundle.reviewer.schema_version).toBe('mock-review-output-v0.1')
   })
 
@@ -65,6 +78,7 @@ describe('audit exports', () => {
       },
       reviews: remoteReviews,
       resolutions: [resolution],
+      reflexiveMemos: [],
       codebookChanges: [],
     })
 
@@ -113,10 +127,11 @@ describe('audit exports', () => {
         final_code: 'FAMILY_FEEDBACK',
         codebook_change_id: change.id,
       }],
+      reflexiveMemos: [],
       codebookChanges: [change],
     })
 
-    expect(bundle.schema_version).toBe('qualiaudit-audit-v0.3')
+    expect(bundle.schema_version).toBe('qualiaudit-audit-v0.4')
     expect(bundle.codebook_change_ledger[0].before).toEqual(before)
     expect(bundle.codebook_change_ledger[0].after.definition).toContain('negotiated')
     expect(bundle.unresolved_recoding_work).toEqual([

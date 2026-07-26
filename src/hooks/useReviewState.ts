@@ -8,6 +8,7 @@ import type {
   HumanCodedExcerpt,
   ProjectBrief,
   ProviderConsent,
+  ReflexiveMemo,
   Resolution,
   ReviewerMode,
 } from '../types'
@@ -22,6 +23,7 @@ export interface ReviewState {
   frozen: FrozenSnapshot | null
   reviews: AiReview[]
   resolutions: Resolution[]
+  reflexiveMemos: ReflexiveMemo[]
   codebookChanges: CodebookChange[]
   selectedExcerptId: string | null
   reviewerMode: ReviewerMode
@@ -38,6 +40,7 @@ export const INITIAL_STATE: ReviewState = {
   frozen: null,
   reviews: [],
   resolutions: [],
+  reflexiveMemos: [],
   codebookChanges: [],
   selectedExcerptId: null,
   reviewerMode: 'mock',
@@ -56,6 +59,7 @@ function readStoredState(): ReviewState {
       ...parsed,
       reviewerMode: parsed.reviewerMode === 'openai' ? 'openai' : 'mock',
       providerConsent: parsed.providerConsent ?? null,
+      reflexiveMemos: Array.isArray(parsed.reflexiveMemos) ? parsed.reflexiveMemos : [],
       codebookChanges: Array.isArray(parsed.codebookChanges) ? parsed.codebookChanges : [],
       reviewRequestId: parsed.reviewRequestId ?? null,
       remoteRequestStarted: parsed.remoteRequestStarted === true,

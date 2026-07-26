@@ -35,7 +35,7 @@ Discarded even if submitted as extra properties:
 
 - human code, rationale, and confidence;
 - second-coder code and rationale;
-- resolutions, final decisions, and change-after-exposure flags;
+- resolutions, final decisions, change-after-exposure flags, and researcher-authored reflexive memos;
 - browser-supplied provider credentials or model overrides.
 
 The server rejects missing/old consent versions, duplicate excerpt IDs, duplicate code IDs, over-sized requests, unsupported analysis modes, and requests above 50 excerpts or 120 KB of allowlisted JSON.
