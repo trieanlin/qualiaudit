@@ -31,7 +31,7 @@ This roadmap treats product, methodological, governance, and engineering work as
 
 ## Phase 3 — richer audit practice
 
-- [ ] HTML/PDF audit report with excerpt-level evidence and print styles.
+- [x] Self-contained HTML audit report with optional excerpt-level evidence and print-to-PDF styles.
 - [x] Codebook change ledger with before/after definitions and affected excerpts.
 - [ ] Batch triage that never hides unresolved or low-context cases.
 - [ ] Researcher-authored reflexive memos linked to decision events.

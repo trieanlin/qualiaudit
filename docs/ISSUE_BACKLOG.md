@@ -40,6 +40,7 @@ These are the first scoped issues to create when the repository receives a GitHu
 ## QA-06 — Generate a printable HTML audit report
 
 **Phase:** Richer audit practice  
+**Status:** Complete
 **Outcome:** A researcher can create a self-contained report with provenance, methods statement, decision log, unresolved cases, and evidence excerpts.  
 **Acceptance:** Print styles are readable; real-model provider fields are included when present; quoted data can be omitted or redacted; the report states limitations.
 
