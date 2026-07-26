@@ -16,8 +16,8 @@ The domain layer remains UI-independent:
 - `reviewerProtocol.ts` versions consent and defines shared request, disclosure, and error metadata.
 - `api/review.ts` re-allowlists the blind payload, keeps credentials server-side, calls the provider, and validates structured output before returning it.
 - `queue.ts` compares the already-independent reading with the frozen human record.
-- `export.ts` constructs reviewed rows and the non-resumable audit bundle.
-- `projectFile.ts` serialises and validates a versioned, resumable copy of `ReviewState`.
+- `export.ts` constructs reviewed rows and the non-resumable audit bundle, including codebook-change and unresolved-recoding records.
+- `projectFile.ts` serialises, migrates, and validates a versioned, resumable copy of `ReviewState`.
 - `localData.ts` produces a content-minimised summary of the retained browser record for the privacy control.
 
 ## Information flow
@@ -37,15 +37,17 @@ Human-coded CSV ──► validation ──► frozen snapshot
                                             comparison queue
                                                      │
                                                      ▼
-                                      human resolution + audit export
+                                  human resolution + codebook-change ledger
                                                      │
                                                      ▼
-                                      local project save / restore
+                                          audit export + project save / restore
 ```
 
 Human fields do not flow through the blind-payload branch. Comparison occurs only after the reviewer result exists.
 
-Project files intentionally sit outside the reviewer boundary: they preserve the complete application state for the human researcher and therefore include fields withheld from AI. Import validation rejects malformed structure, unsupported schema versions, duplicate record IDs, resolutions without reviews, and reviews that are not backed by the frozen excerpt set. Restores never transmit the file and never treat audit JSON as a resumable project.
+Project files intentionally sit outside the reviewer boundary: they preserve the complete application state for the human researcher and therefore include fields withheld from AI. Import validation rejects malformed structure, unsupported schema versions, duplicate record IDs, resolutions without reviews, reviews that are not backed by the frozen excerpt set, and codebook-change events whose IDs, excerpt references, or frozen baseline are inconsistent. Version 1 files migrate to the current version with an empty change ledger. Restores never transmit the file and never treat audit JSON as a resumable project.
+
+The codebook-change ledger is append-only. A “Revise codebook” resolution copies the relevant frozen definition into `before`, stores researcher-authored proposed guidance in `after`, and links the resolution to that event. It does not mutate the frozen codebook or silently recode excerpts. Affected excerpts are copied into an unresolved-recoding list for later human work, while audit and project exports preserve every event.
 
 The local-data control reads the already-loaded `ReviewState`, reports counts rather than excerpt content, and removes only the versioned QualiAudit storage key. Returning to an empty landing state does not recreate an empty storage record. Downloaded files are outside the browser-storage lifecycle and are never represented as deleted by this action. Application-managed encryption is deliberately deferred; see [Browser encryption feasibility](ENCRYPTION_FEASIBILITY.md).
 

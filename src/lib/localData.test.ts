@@ -12,6 +12,7 @@ function sampleState(): ReviewState {
     frozen: null,
     reviews: [],
     resolutions: [],
+    codebookChanges: [],
     selectedExcerptId: null,
     reviewerMode: 'mock',
     providerConsent: null,
@@ -32,6 +33,7 @@ describe('local data summary', () => {
       excerptCount: 8,
       reviewCount: 0,
       decisionCount: 0,
+      codebookChangeCount: 0,
       frozen: false,
     })
     expect(summary.approximateBytes).toBeGreaterThan(0)
@@ -53,6 +55,7 @@ describe('local data summary', () => {
       excerptCount: 0,
       reviewCount: 0,
       decisionCount: 0,
+      codebookChangeCount: 0,
       frozen: false,
       approximateBytes: 0,
     })

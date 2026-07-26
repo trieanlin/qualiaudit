@@ -30,6 +30,7 @@ describe('audit exports', () => {
       frozen: { frozenAt: '2026-07-22T09:30:00.000Z', project: SAMPLE_PROJECT, codebook: SAMPLE_CODEBOOK, humanCoding: SAMPLE_EXCERPTS },
       reviews,
       resolutions: [resolution],
+      codebookChanges: [],
     })
 
     expect(bundle.methodological_safeguards.ai_has_final_decision_authority).toBe(false)
@@ -64,6 +65,7 @@ describe('audit exports', () => {
       },
       reviews: remoteReviews,
       resolutions: [resolution],
+      codebookChanges: [],
     })
 
     expect(bundle.reviewer).toMatchObject({
@@ -73,6 +75,54 @@ describe('audit exports', () => {
       provider_request_id: 'provider-request',
       provider_response_id: 'resp_example',
     })
+  })
+
+  it('exports a versioned codebook ledger and unresolved recoding work', () => {
+    const before = SAMPLE_CODEBOOK.find((item) => item.code === 'FAMILY_FEEDBACK')
+    if (!before) throw new Error('Missing sample code')
+    const change = {
+      ledger_version: 'qualiaudit-codebook-change-v0.1' as const,
+      id: 'change-family-feedback',
+      trigger_excerpt_id: 'SYN-002',
+      code: 'FAMILY_FEEDBACK',
+      before: { ...before },
+      after: {
+        ...before,
+        definition: 'How welcomed, negotiated, or unwanted family feedback shapes engagement.',
+      },
+      author: 'Researcher',
+      rationale: 'The boundary needs clearer guidance.',
+      created_at: '2026-07-22T11:00:00.000Z',
+      affected_excerpt_ids: ['SYN-002', 'SYN-007'],
+      unresolved_recode_excerpt_ids: ['SYN-002', 'SYN-007'],
+    }
+    const bundle = buildAuditBundle({
+      project: SAMPLE_PROJECT,
+      codebook: SAMPLE_CODEBOOK,
+      excerpts: SAMPLE_EXCERPTS,
+      frozen: {
+        frozenAt: '2026-07-22T09:30:00.000Z',
+        project: SAMPLE_PROJECT,
+        codebook: SAMPLE_CODEBOOK,
+        humanCoding: SAMPLE_EXCERPTS,
+      },
+      reviews,
+      resolutions: [{
+        ...resolution,
+        decision: 'revise_codebook',
+        final_code: 'FAMILY_FEEDBACK',
+        codebook_change_id: change.id,
+      }],
+      codebookChanges: [change],
+    })
+
+    expect(bundle.schema_version).toBe('qualiaudit-audit-v0.3')
+    expect(bundle.codebook_change_ledger[0].before).toEqual(before)
+    expect(bundle.codebook_change_ledger[0].after.definition).toContain('negotiated')
+    expect(bundle.unresolved_recoding_work).toEqual([
+      { codebook_change_id: change.id, code: 'FAMILY_FEEDBACK', excerpt_id: 'SYN-002' },
+      { codebook_change_id: change.id, code: 'FAMILY_FEEDBACK', excerpt_id: 'SYN-007' },
+    ])
   })
 
   it('creates a named browser download and releases its object URL', () => {

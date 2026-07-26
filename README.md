@@ -37,12 +37,13 @@ The browser-only demo supports a complete synthetic workflow while keeping impor
 5. Choose the no-transmission local reviewer, or review an explicit provider disclosure and consent to an optional server-side reviewer.
 6. Prioritise divergence, ambiguity, missing context, segment boundaries, and confidence cases.
 7. Record one of nine human resolution decisions with a required rationale.
-8. Inspect the decision log and reviewer provenance.
-9. Export a reviewed coding table as CSV or a fuller audit bundle as JSON.
-10. Save a versioned QualiAudit project file and restore the same review in another browser session.
-11. Inspect the locally retained record and explicitly delete it from the browser.
+8. When revising the codebook, record an append-only before/after change event, its author, affected excerpts, and unresolved recoding work without rewriting the frozen snapshot.
+9. Inspect the decision log, codebook-change ledger, and reviewer provenance.
+10. Export a reviewed coding table as CSV or a fuller audit bundle as JSON.
+11. Save a versioned QualiAudit project file and restore the same review in another browser session.
+12. Inspect the locally retained record and explicitly delete it from the browser.
 
-Working state is saved in browser `localStorage`. **Data & privacy** shows the saved project, stage, record counts, and approximate size; deletion removes QualiAudit’s own browser record after confirmation without clearing unrelated site data. A resumable `.qualiaudit.json` project file can be downloaded explicitly; it contains the full review state, including human judgments and decision history. The sample’s default path uses no account, API key, backend review call, or third-party model.
+Working state is saved in browser `localStorage`. **Data & privacy** shows the saved project, stage, record counts, and approximate size; deletion removes QualiAudit’s own browser record after confirmation without clearing unrelated site data. A resumable `.qualiaudit.json` project file can be downloaded explicitly; it contains the full review state, including human judgments, decision history, and codebook-change history. The sample’s default path uses no account, API key, backend review call, or third-party model.
 
 ## Method-aware behaviour
 
@@ -107,7 +108,7 @@ npm run check:release
 npm run check
 ```
 
-The test suite covers validation, comma/semicolon/tab-delimited parsing, Unicode and structural import failures, multi-code and segment-boundary diagnostics, blind payload construction, deterministic review structure, explicit provider consent, server-side payload re-allowlisting, strict provider-output checks, method-aware queue labels, comparison categories, spreadsheet and research-tool profile mapping, fictional workbook fixtures, versioned project-file recovery, explicit browser-record deletion, and CSV/JSON audit data.
+The test suite covers validation, comma/semicolon/tab-delimited parsing, Unicode and structural import failures, multi-code and segment-boundary diagnostics, blind payload construction, deterministic review structure, explicit provider consent, server-side payload re-allowlisting, strict provider-output checks, method-aware queue labels, comparison categories, spreadsheet and research-tool profile mapping, fictional workbook fixtures, versioned project-file recovery and migration, append-only codebook-change events, explicit browser-record deletion, and CSV/JSON audit data.
 
 ## Data and templates
 
@@ -126,7 +127,9 @@ Validation does not silently flatten multiple human codes into one. A primary co
 
 These profiles do not parse native project files, guarantee compatibility with every vendor version or locale, infer codes from sheet names, or silently flatten multi-code cells.
 
-The **Save project** action creates a resumable, versioned QualiAudit JSON file. This is different from **Export audit JSON**, which is a reporting record and cannot be reopened as a working project. Restoring a project first shows its name, method, stage, material counts, and export date before replacing browser state.
+The **Save project** action creates a resumable, versioned QualiAudit JSON file. The current project-file schema is version 2; version 1 files are migrated on restore with an empty codebook-change ledger. This is different from **Export audit JSON**, which is a reporting record and cannot be reopened as a working project. Restoring a project first shows its name, method, stage, material counts, codebook-change count, and export date before replacing browser state.
+
+Choosing **Revise codebook** creates a new ledger event rather than editing the frozen codebook. The event preserves the frozen guidance beside the proposed guidance, records its author and rationale, identifies affected excerpts, and keeps those excerpts visible as unresolved recoding work. Later edits create additional events so prior reasoning remains inspectable.
 
 The **Data & privacy** action makes automatic browser retention visible and offers a confirmed **Delete local review** control. Browser deletion does not delete `.qualiaudit.json`, CSV, JSON, or other files already downloaded to the device.
 
@@ -159,7 +162,7 @@ The current prototype does not:
 - The optional provider adapter has an initial secret, consent, allowlist, validation, size, timeout, and safe-error boundary; these controls do not make transmitted data institutionally approved or suitable for sensitive research.
 - The initial engineering threat model is public, but QualiAudit still has no accounts, durable application-level rate limiting, institution-specific approval, or claim of suitability for sensitive research data.
 - Browser deletion removes QualiAudit’s saved working record, not downloaded files, browser backups, or copies made elsewhere.
-- QualiAudit project files are plain JSON backups, not encrypted containers. They may include excerpts, context, human codes, second-coder judgments, rationales, AI reviews, and decisions; protect them like the underlying research dataset.
+- QualiAudit project files are plain JSON backups, not encrypted containers. They may include excerpts, context, human codes, second-coder judgments, rationales, AI reviews, decisions, codebook-change authors, proposed guidance, and affected-excerpt lists; protect them like the underlying research dataset.
 - Delimited-text detection covers comma, semicolon, and tab files, not every locale-specific or proprietary export dialect. Text and Excel imports are limited to 10 MB and 5,000 data rows; formulas are imported as their stored values and encrypted workbooks are unsupported.
 - The current first-pass schema accepts one primary human code per excerpt. Multi-code cells are reported for human correction rather than silently flattened.
 - Human decisions after AI exposure may be influenced by automation bias even when the review is blind. QualiAudit records changes; it cannot remove that influence.

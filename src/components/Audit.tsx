@@ -2,7 +2,15 @@ import { ArrowLeft, Check, Download, FileJson, FileText, History, Info, LockKeyh
 import { buildAuditBundle, buildReviewedRows, downloadText, reviewedRowsCsv } from '../lib/export'
 import { categoryLabel, classifyCase } from '../lib/queue'
 import { decisionLabels } from '../lib/resolutions'
-import type { AiReview, CodeDefinition, FrozenSnapshot, HumanCodedExcerpt, ProjectBrief, Resolution } from '../types'
+import type {
+  AiReview,
+  CodebookChange,
+  CodeDefinition,
+  FrozenSnapshot,
+  HumanCodedExcerpt,
+  ProjectBrief,
+  Resolution,
+} from '../types'
 import { ModeBadge } from './Shell'
 
 interface AuditProps {
@@ -12,6 +20,7 @@ interface AuditProps {
   frozen: FrozenSnapshot
   reviews: AiReview[]
   resolutions: Resolution[]
+  codebookChanges: CodebookChange[]
   onBack: () => void
   onOpenCase: (excerptId: string) => void
 }
@@ -20,12 +29,33 @@ function formatDate(value: string): string {
   return new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
 }
 
-export function Audit({ project, codebook, excerpts, frozen, reviews, resolutions, onBack, onOpenCase }: AuditProps) {
+export function Audit({
+  project,
+  codebook,
+  excerpts,
+  frozen,
+  reviews,
+  resolutions,
+  codebookChanges,
+  onBack,
+  onOpenCase,
+}: AuditProps) {
   const changed = resolutions.filter((item) => item.changed_after_ai_exposure)
   const unresolved = resolutions.filter((item) => item.decision === 'unresolved')
-  const codebookChanges = resolutions.filter((item) => item.decision === 'revise_codebook')
+  const unresolvedRecodingCount = codebookChanges.reduce(
+    (total, item) => total + item.unresolved_recode_excerpt_ids.length,
+    0,
+  )
   const rows = buildReviewedRows(excerpts, reviews, resolutions)
-  const bundle = buildAuditBundle({ project, codebook, excerpts, frozen, reviews, resolutions })
+  const bundle = buildAuditBundle({
+    project,
+    codebook,
+    excerpts,
+    frozen,
+    reviews,
+    resolutions,
+    codebookChanges,
+  })
   const reviewDate = reviews[0]?.reviewed_at
   const reviewer = reviews[0]
   const usedOpenAi = reviewer?.provider === 'openai'
@@ -58,7 +88,7 @@ export function Audit({ project, codebook, excerpts, frozen, reviews, resolution
         <article><span><Check /></span><div><strong>{resolutions.length}</strong><small>cases resolved</small></div></article>
         <article><span><History /></span><div><strong>{changed.length}</strong><small>changed after AI exposure</small></div></article>
         <article><span><Info /></span><div><strong>{unresolved.length}</strong><small>intentionally unresolved</small></div></article>
-        <article><span><FileText /></span><div><strong>{codebookChanges.length}</strong><small>codebook changes flagged</small></div></article>
+        <article><span><FileText /></span><div><strong>{codebookChanges.length}</strong><small>codebook change events</small></div></article>
       </div>
 
       <div className="audit-grid">
@@ -86,6 +116,50 @@ export function Audit({ project, codebook, excerpts, frozen, reviews, resolution
           <small>Review and adapt this statement for your actual method, model, data governance, and institutional requirements.</small>
         </section>
       </div>
+
+      <section className="codebook-ledger-section">
+        <div className="section-miniheading">
+          <div><span className="overline">CODEBOOK CHANGE LEDGER</span><h2>Proposed revisions after comparison</h2></div>
+          <span>{codebookChanges.length} events · {unresolvedRecodingCount} unresolved recoding tasks</span>
+        </div>
+        {codebookChanges.length === 0 ? (
+          <div className="empty-log">
+            <FileText />
+            <h3>No codebook changes recorded.</h3>
+            <p>A “Revise codebook” decision can preserve before/after guidance without altering the frozen snapshot.</p>
+          </div>
+        ) : (
+          <div className="codebook-ledger">
+            {codebookChanges.map((change) => (
+              <article key={change.id}>
+                <div className="ledger-topline">
+                  <span className="code-pill">{change.code}</span>
+                  <span>{formatDate(change.created_at)}</span>
+                </div>
+                <h3>Proposed by {change.author}</h3>
+                <p className="ledger-rationale">{change.rationale}</p>
+                <div className="ledger-comparison">
+                  <section>
+                    <span className="overline">FROZEN BEFORE</span>
+                    <p>{change.before.definition}</p>
+                    <dl><dt>Include when</dt><dd>{change.before.include_when}</dd><dt>Exclude when</dt><dd>{change.before.exclude_when}</dd></dl>
+                  </section>
+                  <section>
+                    <span className="overline">PROPOSED AFTER</span>
+                    <p>{change.after.definition}</p>
+                    <dl><dt>Include when</dt><dd>{change.after.include_when}</dd><dt>Exclude when</dt><dd>{change.after.exclude_when}</dd></dl>
+                  </section>
+                </div>
+                <div className="ledger-work">
+                  <div><strong>Affected excerpts</strong><span>{change.affected_excerpt_ids.join(', ')}</span></div>
+                  <div><strong>Unresolved recoding</strong><span>{change.unresolved_recode_excerpt_ids.join(', ') || 'None'}</span></div>
+                  <button className="text-button" type="button" onClick={() => onOpenCase(change.trigger_excerpt_id)}>Open triggering case</button>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
 
       <section className="decision-log-section">
         <div className="section-miniheading"><div><span className="overline">DECISION LOG</span><h2>Post-exposure decisions</h2></div><span>{resolutions.length} of {excerpts.length} cases recorded</span></div>

@@ -102,8 +102,23 @@ export interface Resolution {
   decision: ResolutionDecision
   rationale: string
   final_code?: string
+  codebook_change_id?: string
   decided_at: string
   changed_after_ai_exposure: boolean
+}
+
+export interface CodebookChange {
+  ledger_version: 'qualiaudit-codebook-change-v0.1'
+  id: string
+  trigger_excerpt_id: string
+  code: string
+  before: CodeDefinition
+  after: CodeDefinition
+  author: string
+  rationale: string
+  created_at: string
+  affected_excerpt_ids: string[]
+  unresolved_recode_excerpt_ids: string[]
 }
 
 export interface FrozenSnapshot {

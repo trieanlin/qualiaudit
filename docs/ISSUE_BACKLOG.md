@@ -33,6 +33,7 @@ These are the first scoped issues to create when the repository receives a GitHu
 ## QA-05 — Create a versioned codebook-change ledger
 
 **Phase:** Richer audit practice  
+**Status:** Complete
 **Outcome:** “Revise codebook” decisions can record before/after definitions and identify affected excerpts.  
 **Acceptance:** Changes never rewrite the frozen snapshot; the audit shows author, rationale, timestamp, affected codes, and unresolved recoding work.
 

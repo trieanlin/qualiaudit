@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import type {
   AiReview,
   AppView,
+  CodebookChange,
   CodeDefinition,
   FrozenSnapshot,
   HumanCodedExcerpt,
@@ -21,6 +22,7 @@ export interface ReviewState {
   frozen: FrozenSnapshot | null
   reviews: AiReview[]
   resolutions: Resolution[]
+  codebookChanges: CodebookChange[]
   selectedExcerptId: string | null
   reviewerMode: ReviewerMode
   providerConsent: ProviderConsent | null
@@ -36,6 +38,7 @@ export const INITIAL_STATE: ReviewState = {
   frozen: null,
   reviews: [],
   resolutions: [],
+  codebookChanges: [],
   selectedExcerptId: null,
   reviewerMode: 'mock',
   providerConsent: null,
@@ -53,6 +56,7 @@ function readStoredState(): ReviewState {
       ...parsed,
       reviewerMode: parsed.reviewerMode === 'openai' ? 'openai' : 'mock',
       providerConsent: parsed.providerConsent ?? null,
+      codebookChanges: Array.isArray(parsed.codebookChanges) ? parsed.codebookChanges : [],
       reviewRequestId: parsed.reviewRequestId ?? null,
       remoteRequestStarted: parsed.remoteRequestStarted === true,
     }
