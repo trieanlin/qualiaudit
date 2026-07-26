@@ -4,7 +4,12 @@ All notable changes to QualiAudit are documented here. The project follows [Sema
 
 ## [Unreleased]
 
-No unreleased changes yet.
+### Added
+
+- An ethics-gated formative evaluation kit for the fictional synthetic demo,
+  including method-sensitive research questions, a neutral moderated-session
+  guide, privacy-minimised observation template, negative-case analysis plan,
+  and explicit pre-recruitment governance gate.
 
 ## [0.2.0] - 2026-07-26
 
