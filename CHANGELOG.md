@@ -32,6 +32,8 @@ All notable changes to QualiAudit are documented here. The project follows [Sema
 - Append-only researcher reflexive memos with author, timestamp, linked excerpt, and the human decision snapshot that prompted the memo.
 - A distinct optional second-human-coder comparison with method-sensitive overlap/divergence language, separate queue and case framing, and an independent audit section.
 - CSV second-human fields plus audit JSON schema version 0.5 and HTML report version 0.3 records that explicitly exclude human–human counts from AI queue categories and reliability claims.
+- Safe queue triage groups that keep every unresolved case visible, pin context/confidence/boundary/ambiguity/unsupported-reading concerns first, and never batch-resolve or automatically recode material.
+- Audit JSON schema version 0.6 and HTML report version 0.4 records that disclose the non-decisional triage policy outside the interface.
 - Project-file schema version 3 with safe version 1/2 migration, reflexive-memo and codebook-ledger integrity checks, and linked resolution events.
 - Audit bundle schema version 0.4 introduced reflexive memos, codebook-change history, and a flattened unresolved-recoding list.
 - A self-contained printable HTML audit report with project context, method statement, reviewer provenance, frozen codebook, decision and reflexive-memo logs, unresolved cases, codebook changes, and limitations.

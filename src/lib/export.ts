@@ -10,6 +10,7 @@ import type {
 } from '../types'
 import { toCsv } from './csv'
 import { buildSecondCoderComparisons, summariseSecondCoderComparisons } from './secondCoder'
+import { PROTECTED_TRIAGE_CATEGORIES } from './triage'
 
 export interface ReviewedCodingRow {
   excerpt_id: string
@@ -105,7 +106,7 @@ export function buildAuditBundle(args: {
   const usedOpenAi = firstReview?.provider === 'openai'
   const secondCoderComparisons = buildSecondCoderComparisons(excerpts)
   return {
-    schema_version: 'qualiaudit-audit-v0.5',
+    schema_version: 'qualiaudit-audit-v0.6',
     exported_at: new Date().toISOString(),
     project,
     methodological_safeguards: {
@@ -121,6 +122,14 @@ export function buildAuditBundle(args: {
         'reflexive_memos',
       ],
       ai_has_final_decision_authority: false,
+    },
+    queue_triage_policy: {
+      analytical_status: 'attention_organisation_only',
+      batch_resolution_available: false,
+      automatic_recoding_available: false,
+      unresolved_cases_hidden_by_triage: false,
+      protected_cases_pinned_first: true,
+      protected_unresolved_categories: [...PROTECTED_TRIAGE_CATEGORIES],
     },
     reviewer: {
       provider: usedOpenAi ? 'OpenAI API via QualiAudit server endpoint' : 'local deterministic mock — no data sent to a third party',

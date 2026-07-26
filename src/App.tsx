@@ -5,7 +5,7 @@ import { FreezeReview, Reviewing } from './components/FreezeReview'
 import { Landing } from './components/Landing'
 import { LocalDataDialog } from './components/LocalDataDialog'
 import { Materials } from './components/Materials'
-import { ReviewQueue } from './components/ReviewQueue'
+import { ReviewQueue, type QueueDisplay } from './components/ReviewQueue'
 import { Setup } from './components/Setup'
 import { Shell } from './components/Shell'
 import { SAMPLE_CODEBOOK, SAMPLE_EXCERPTS, SAMPLE_PROJECT } from './data/sample'
@@ -15,6 +15,8 @@ import { projectFileName, serialisePortableProject } from './lib/projectFile'
 import { REMOTE_REVIEW_EXACT_FIELDS, REVIEWER_CONSENT_VERSION } from './lib/reviewerProtocol'
 import type { AiReview, CodebookChange, ProjectBrief, ReflexiveMemo, Resolution, ReviewerMode } from './types'
 
+export const QUEUE_DISPLAY_SESSION_KEY = 'qualiaudit-queue-display'
+
 function cloneSample() {
   return {
     project: { ...SAMPLE_PROJECT },
@@ -23,10 +25,29 @@ function cloneSample() {
   }
 }
 
+function readQueueDisplay(): QueueDisplay {
+  try {
+    return sessionStorage.getItem(QUEUE_DISPLAY_SESSION_KEY) === 'triage_groups'
+      ? 'triage_groups'
+      : 'case_list'
+  } catch {
+    return 'case_list'
+  }
+}
+
 export default function App() {
   const { state, setState, patchState, reset } = useReviewState()
   const [showLocalData, setShowLocalData] = useState(false)
+  const [queueDisplay, setQueueDisplay] = useState<QueueDisplay>(readQueueDisplay)
   const previousViewKey = useRef(`${state.view}:${state.selectedExcerptId ?? ''}`)
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(QUEUE_DISPLAY_SESSION_KEY, queueDisplay)
+    } catch {
+      // The queue still works when browser preference storage is unavailable.
+    }
+  }, [queueDisplay])
 
   useEffect(() => {
     const nextViewKey = `${state.view}:${state.selectedExcerptId ?? ''}`
@@ -43,6 +64,7 @@ export default function App() {
 
   const openSample = () => {
     const sample = cloneSample()
+    setQueueDisplay('case_list')
     patchState({
       ...sample,
       view: 'materials',
@@ -61,6 +83,7 @@ export default function App() {
 
   const startSetup = () => {
     const sample = cloneSample()
+    setQueueDisplay('case_list')
     patchState({
       ...sample,
       view: 'setup',
@@ -78,7 +101,10 @@ export default function App() {
   }
 
   const handleReset = () => {
-    if (state.view === 'landing' || window.confirm('Start over? This clears the review saved in this browser. Save a project file first if you need to resume it later.')) reset()
+    if (state.view === 'landing' || window.confirm('Start over? This clears the review saved in this browser. Save a project file first if you need to resume it later.')) {
+      setQueueDisplay('case_list')
+      reset()
+    }
   }
 
   const saveProject = (project: ProjectBrief) => patchState({ project, view: 'materials' })
@@ -242,6 +268,8 @@ export default function App() {
           excerpts={activeExcerpts}
           reviews={state.reviews}
           resolutions={state.resolutions}
+          queueDisplay={queueDisplay}
+          onQueueDisplayChange={setQueueDisplay}
           onOpenCase={openCase}
           onOpenAudit={() => patchState({ view: 'audit' })}
         />

@@ -91,3 +91,10 @@ These are the first scoped issues to create when the repository receives a GitHu
 **Status:** Complete
 **Outcome:** A researcher can inspect optional second-human coding without combining it with the independent AI review or implying that AI replaced a human coder.
 **Acceptance:** Second-human codes and rationales remain frozen and withheld from the reviewer; queue, case, audit, CSV, JSON, and HTML outputs preserve an explicit analytical boundary; method-sensitive labels avoid error language in reflexive mode; optional-subset counts do not produce an intercoder-reliability coefficient.
+
+## QA-14 — Add non-decisional batch triage
+
+**Phase:** Richer audit practice
+**Status:** Complete
+**Outcome:** A researcher can organise a larger review queue into attention bands without losing sight of unresolved or context-limited cases.
+**Acceptance:** Every unresolved case appears in triage; context, confidence, boundary, ambiguity, and unsupported-reading concerns are pinned first; direct overlap remains visible; no bulk resolution or automatic recoding action exists; method-aware language and JSON/HTML audit records disclose the triage policy.

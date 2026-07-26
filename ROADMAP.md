@@ -33,7 +33,7 @@ This roadmap treats product, methodological, governance, and engineering work as
 
 - [x] Self-contained HTML audit report with optional excerpt-level evidence and print-to-PDF styles.
 - [x] Codebook change ledger with before/after definitions and affected excerpts.
-- [ ] Batch triage that never hides unresolved or low-context cases.
+- [x] Batch triage that never hides unresolved or low-context cases.
 - [x] Researcher-authored reflexive memos linked to decision events.
 - [x] Optional second-human-coder comparison kept analytically separate from AI review.
 
