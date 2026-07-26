@@ -24,8 +24,10 @@ describe('codebook change resolution', () => {
         human={human}
         excerpts={SAMPLE_EXCERPTS}
         ai={ai}
+        memos={[]}
         onBack={vi.fn()}
         onSave={onSave}
+        onAddMemo={vi.fn()}
       />,
     )
 
@@ -83,8 +85,10 @@ describe('codebook change resolution', () => {
         human={human}
         excerpts={SAMPLE_EXCERPTS}
         ai={ai}
+        memos={[]}
         onBack={vi.fn()}
         onSave={onSave}
+        onAddMemo={vi.fn()}
       />,
     )
 
@@ -97,5 +101,54 @@ describe('codebook change resolution', () => {
 
     expect(onSave).not.toHaveBeenCalled()
     expect(screen.getByText(/at least one real change/)).toBeInTheDocument()
+  })
+
+  it('adds an append-only researcher memo linked to an existing human decision', async () => {
+    const user = userEvent.setup()
+    const onAddMemo = vi.fn()
+    const human = SAMPLE_EXCERPTS[1]
+    const ai = runMockBlindReview(
+      buildBlindReviewPayload(SAMPLE_PROJECT, SAMPLE_CODEBOOK, SAMPLE_EXCERPTS),
+    )[1]
+    const existing = {
+      excerpt_id: human.excerpt_id,
+      decision: 'keep_both' as const,
+      rationale: 'Both readings matter for the analytic question.',
+      final_code: 'FAMILY_FEEDBACK + PRIVACY_BOUNDARY',
+      decided_at: '2026-07-25T09:00:00.000Z',
+      changed_after_ai_exposure: true,
+    }
+
+    render(
+      <CaseResolution
+        project={{ ...SAMPLE_PROJECT, analysisMode: 'reflexive' }}
+        codebook={SAMPLE_CODEBOOK}
+        human={human}
+        excerpts={SAMPLE_EXCERPTS}
+        ai={ai}
+        existing={existing}
+        memos={[]}
+        onBack={vi.fn()}
+        onSave={vi.fn()}
+        onAddMemo={onAddMemo}
+      />,
+    )
+
+    expect(screen.getByText(/never sent back to the AI reviewer/)).toBeInTheDocument()
+    await user.type(
+      screen.getByRole('textbox', { name: /Reflexive memo/ }),
+      'The comparison made privacy and family care feel analytically inseparable.',
+    )
+    await user.click(screen.getByRole('button', { name: 'Add memo' }))
+
+    expect(onAddMemo).toHaveBeenCalledOnce()
+    expect(onAddMemo.mock.calls[0][0]).toMatchObject({
+      memo_version: 'qualiaudit-reflexive-memo-v0.1',
+      excerpt_id: 'SYN-002',
+      resolution_decided_at: existing.decided_at,
+      decision: 'keep_both',
+      author: 'Researcher',
+      body: 'The comparison made privacy and family care feel analytically inseparable.',
+    })
   })
 })

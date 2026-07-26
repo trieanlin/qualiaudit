@@ -12,6 +12,7 @@ function sampleState(): ReviewState {
     frozen: null,
     reviews: [],
     resolutions: [],
+    reflexiveMemos: [],
     codebookChanges: [],
     selectedExcerptId: null,
     reviewerMode: 'mock',
@@ -33,6 +34,7 @@ describe('local data summary', () => {
       excerptCount: 8,
       reviewCount: 0,
       decisionCount: 0,
+      memoCount: 0,
       codebookChangeCount: 0,
       frozen: false,
     })
@@ -55,6 +57,7 @@ describe('local data summary', () => {
       excerptCount: 0,
       reviewCount: 0,
       decisionCount: 0,
+      memoCount: 0,
       codebookChangeCount: 0,
       frozen: false,
       approximateBytes: 0,

@@ -9,6 +9,7 @@ import type {
   HumanCodedExcerpt,
   ProjectBrief,
   ProviderConsent,
+  ReflexiveMemo,
   Resolution,
   ResolutionDecision,
   ReviewerMode,
@@ -16,9 +17,9 @@ import type {
 import { REVIEWER_CONSENT_VERSION } from './reviewerProtocol'
 
 export const PROJECT_FILE_FORMAT = 'qualiaudit-project'
-export const PROJECT_FILE_SCHEMA_VERSION = 2
+export const PROJECT_FILE_SCHEMA_VERSION = 3
 export const MAX_PROJECT_FILE_SIZE = 20 * 1024 * 1024
-const SUPPORTED_PROJECT_FILE_VERSIONS = new Set([1, PROJECT_FILE_SCHEMA_VERSION])
+const SUPPORTED_PROJECT_FILE_VERSIONS = new Set([1, 2, PROJECT_FILE_SCHEMA_VERSION])
 
 const APP_VIEWS = new Set<AppView>(['landing', 'setup', 'materials', 'freeze', 'reviewing', 'queue', 'case', 'audit'])
 const CONFIDENCE_VALUES = new Set<Confidence>(['low', 'medium', 'high'])
@@ -229,6 +230,28 @@ function parseResolution(value: unknown, index: number): Resolution {
   }
 }
 
+function parseReflexiveMemo(value: unknown, index: number): ReflexiveMemo {
+  const label = `Reflexive memo ${index + 1}`
+  const item = record(value, label)
+  if (item.memo_version !== 'qualiaudit-reflexive-memo-v0.1') {
+    throw new ProjectFileError(`${label} uses an unsupported memo version.`)
+  }
+  const decision = text(item.decision, `${label} decision`)
+  if (!RESOLUTION_DECISIONS.has(decision as ResolutionDecision)) {
+    throw new ProjectFileError(`${label} has an unsupported linked decision.`)
+  }
+  return {
+    memo_version: 'qualiaudit-reflexive-memo-v0.1',
+    id: text(item.id, `${label} ID`),
+    excerpt_id: text(item.excerpt_id, `${label} excerpt ID`),
+    resolution_decided_at: isoDate(item.resolution_decided_at, `${label} linked decision date`),
+    decision: decision as ResolutionDecision,
+    author: text(item.author, `${label} author`),
+    body: text(item.body, `${label} body`),
+    created_at: isoDate(item.created_at, `${label} creation date`),
+  }
+}
+
 function parseCodebookChange(value: unknown, index: number): CodebookChange {
   const label = `Codebook change ${index + 1}`
   const item = record(value, label)
@@ -290,6 +313,9 @@ function parseState(value: unknown, sourceSchemaVersion: number): ReviewState {
   const frozen = item.frozen == null ? null : parseSnapshot(item.frozen)
   const reviews = array(item.reviews, 'AI reviews').map(parseReview)
   const resolutions = array(item.resolutions, 'Resolutions').map(parseResolution)
+  const reflexiveMemos = sourceSchemaVersion >= 3
+    ? array(item.reflexiveMemos, 'Reflexive memos').map(parseReflexiveMemo)
+    : []
   const codebookChanges = sourceSchemaVersion >= 2
     ? array(item.codebookChanges, 'Codebook changes').map(parseCodebookChange)
     : []
@@ -305,6 +331,7 @@ function parseState(value: unknown, sourceSchemaVersion: number): ReviewState {
   uniqueIds(excerpts.map((row) => row.excerpt_id), 'Human-coded excerpts')
   uniqueIds(reviews.map((row) => row.excerpt_id), 'AI reviews')
   uniqueIds(resolutions.map((row) => row.excerpt_id), 'Resolutions')
+  uniqueIds(reflexiveMemos.map((row) => row.id), 'Reflexive memos')
   uniqueIds(codebookChanges.map((row) => row.id), 'Codebook changes')
 
   const activeExcerptIds = new Set((frozen?.humanCoding ?? excerpts).map((row) => row.excerpt_id))
@@ -313,6 +340,13 @@ function parseState(value: unknown, sourceSchemaVersion: number): ReviewState {
   }
   if (resolutions.some((resolution) => !activeExcerptIds.has(resolution.excerpt_id))) {
     throw new ProjectFileError('A resolution refers to an excerpt that is not in the frozen record.')
+  }
+  if (reflexiveMemos.some((memo) => !activeExcerptIds.has(memo.excerpt_id))) {
+    throw new ProjectFileError('A reflexive memo refers to an excerpt that is not in the frozen record.')
+  }
+  const resolutionExcerptIds = new Set(resolutions.map((resolution) => resolution.excerpt_id))
+  if (reflexiveMemos.some((memo) => !resolutionExcerptIds.has(memo.excerpt_id))) {
+    throw new ProjectFileError('A reflexive memo must refer to a case with a recorded human decision.')
   }
   const frozenCodebookByCode = new Map((frozen?.codebook ?? codebook).map((definition) => [definition.code, definition]))
   for (const change of codebookChanges) {
@@ -362,6 +396,7 @@ function parseState(value: unknown, sourceSchemaVersion: number): ReviewState {
     frozen,
     reviews,
     resolutions,
+    reflexiveMemos,
     codebookChanges,
     selectedExcerptId,
     reviewerMode,
@@ -408,7 +443,7 @@ export function parsePortableProjectFile(source: string): PortableProjectFile {
     throw new ProjectFileError('This is not a QualiAudit project file. Audit JSON exports cannot be resumed.')
   }
   if (typeof file.schema_version !== 'number' || !SUPPORTED_PROJECT_FILE_VERSIONS.has(file.schema_version)) {
-    throw new ProjectFileError(`This project-file version is not supported. Expected version 1 or ${PROJECT_FILE_SCHEMA_VERSION}.`)
+    throw new ProjectFileError(`This project-file version is not supported. Expected version 1, 2, or ${PROJECT_FILE_SCHEMA_VERSION}.`)
   }
   const application = record(file.application, 'Application metadata')
   if (application.name !== 'QualiAudit') throw new ProjectFileError('The project file has invalid application metadata.')

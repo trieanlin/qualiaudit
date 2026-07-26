@@ -70,8 +70,10 @@ describe('automated accessibility checks', () => {
         human={SAMPLE_EXCERPTS[1]}
         excerpts={SAMPLE_EXCERPTS}
         ai={reviews[1]}
+        memos={[]}
         onBack={vi.fn()}
         onSave={vi.fn()}
+        onAddMemo={vi.fn()}
       />,
     )
     expect(screen.getByRole('heading', { level: 1, name: /Review case SYN-002/ })).toBeInTheDocument()
@@ -175,8 +177,10 @@ describe('keyboard and focus behaviour', () => {
         human={SAMPLE_EXCERPTS[1]}
         excerpts={SAMPLE_EXCERPTS}
         ai={reviews[1]}
+        memos={[]}
         onBack={vi.fn()}
         onSave={vi.fn()}
+        onAddMemo={vi.fn()}
       />,
     )
 

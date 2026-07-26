@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { SAMPLE_CODEBOOK, SAMPLE_EXCERPTS, SAMPLE_PROJECT } from '../data/sample'
-import type { CodebookChange, Resolution } from '../types'
+import type { CodebookChange, ReflexiveMemo, Resolution } from '../types'
 import {
   buildAuditMethodStatement,
   buildHtmlAuditReport,
@@ -40,6 +40,16 @@ describe('printable HTML audit report', () => {
     affected_excerpt_ids: ['SYN-002', 'SYN-007'],
     unresolved_recode_excerpt_ids: ['SYN-002', 'SYN-007'],
   }
+  const memo: ReflexiveMemo = {
+    memo_version: 'qualiaudit-reflexive-memo-v0.1',
+    id: 'memo-syn-002',
+    excerpt_id: 'SYN-002',
+    resolution_decided_at: resolution.decided_at,
+    decision: resolution.decision,
+    author: 'Researcher',
+    body: 'The alternative reading made privacy and family care feel analytically inseparable.',
+    created_at: '2026-07-22T11:05:00.000Z',
+  }
   const input = {
     project: SAMPLE_PROJECT,
     codebook: SAMPLE_CODEBOOK,
@@ -52,6 +62,7 @@ describe('printable HTML audit report', () => {
     },
     reviews,
     resolutions: [resolution],
+    reflexiveMemos: [memo],
     codebookChanges: [change],
   }
 
@@ -72,6 +83,9 @@ describe('printable HTML audit report', () => {
     expect(report).not.toContain(SAMPLE_EXCERPTS[0].excerpt)
     expect(report).not.toContain(reviews[0].evidence_quote)
     expect(report).toContain('Both readings remain analytically useful.')
+    expect(report).toContain('Researcher reflections linked to decisions')
+    expect(report).toContain(memo.body)
+    expect(report).toContain('QualiAudit HTML v0.2')
     expect(report).toContain('Second-coder rationale:')
     expect(report).toContain('Possible codebook issue:')
     expect(report).toContain('No post-exposure decision recorded.')
@@ -112,6 +126,7 @@ describe('printable HTML audit report', () => {
       },
       reviews: [],
       resolutions: [],
+      reflexiveMemos: [],
       codebookChanges: [],
     }, {
       includeSourceText: true,

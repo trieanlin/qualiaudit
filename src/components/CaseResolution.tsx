@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, Check, CircleAlert, Eye, GitCompareArrows, MessageSquareText, UserRound } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Check, CircleAlert, Eye, GitCompareArrows, MessageSquareText, NotebookPen, UserRound } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { categoryLabel, classifyCase } from '../lib/queue'
@@ -9,6 +9,7 @@ import type {
   CodeDefinition,
   HumanCodedExcerpt,
   ProjectBrief,
+  ReflexiveMemo,
   Resolution,
   ResolutionDecision,
 } from '../types'
@@ -21,8 +22,10 @@ interface CaseResolutionProps {
   ai: AiReview
   existing?: Resolution
   existingCodebookChange?: CodebookChange
+  memos: ReflexiveMemo[]
   onBack: () => void
   onSave: (resolution: Resolution, codebookChange?: CodebookChange) => void
+  onAddMemo: (memo: ReflexiveMemo) => void
 }
 
 const CHANGED_DECISIONS = new Set<ResolutionDecision>(['accept_ai', 'keep_both', 'revise_code', 'revise_boundary', 'revise_codebook'])
@@ -59,8 +62,10 @@ export function CaseResolution({
   ai,
   existing,
   existingCodebookChange,
+  memos,
   onBack,
   onSave,
+  onAddMemo,
 }: CaseResolutionProps) {
   const initialChangeCode = existingCodebookChange?.code ?? human.human_code
   const initialCodeDefinition = codebook.find((item) => item.code === initialChangeCode) ?? codebook[0]
@@ -78,8 +83,12 @@ export function CaseResolution({
       ?? defaultAffectedIds(initialCodeDefinition?.code ?? '', excerpts, human.excerpt_id),
   )
   const [showError, setShowError] = useState(false)
+  const [memoAuthor, setMemoAuthor] = useState('Researcher')
+  const [memoBody, setMemoBody] = useState('')
+  const [memoError, setMemoError] = useState(false)
   const decisionRefs = useRef<Partial<Record<ResolutionDecision, HTMLButtonElement | null>>>({})
   const errorSummaryRef = useRef<HTMLDivElement>(null)
+  const memoErrorRef = useRef<HTMLDivElement>(null)
   const category = classifyCase(human, ai, codebook)
   const relevantCodes = useMemo(() => {
     const wanted = new Set([human.human_code, ai.primary_suggested_code, ai.alternative_code].filter(Boolean))
@@ -184,6 +193,27 @@ export function CaseResolution({
       decided_at: decidedAt,
       changed_after_ai_exposure: CHANGED_DECISIONS.has(decision),
     }, codebookChange)
+  }
+
+  const addMemo = () => {
+    if (!existing || memoAuthor.trim().length < 2 || memoBody.trim().length < 12) {
+      setMemoError(true)
+      window.requestAnimationFrame(() => memoErrorRef.current?.focus())
+      return
+    }
+    const createdAt = new Date().toISOString()
+    onAddMemo({
+      memo_version: 'qualiaudit-reflexive-memo-v0.1',
+      id: crypto.randomUUID(),
+      excerpt_id: human.excerpt_id,
+      resolution_decided_at: existing.decided_at,
+      decision: existing.decision,
+      author: memoAuthor.trim(),
+      body: memoBody.trim(),
+      created_at: createdAt,
+    })
+    setMemoBody('')
+    setMemoError(false)
   }
 
   return (
@@ -361,6 +391,68 @@ export function CaseResolution({
           <button className="button primary" type="button" onClick={save}>Save decision <ArrowRight size={17} /></button>
         </div>
       </section>
+
+      {existing && (
+        <section className="reflexive-memo-section" aria-labelledby="reflexive-memo-heading">
+          <div className="reflexive-memo-heading">
+            <NotebookPen aria-hidden="true" />
+            <div>
+              <span className="overline">RESEARCHER REFLEXIVE MEMO</span>
+              <h2 id="reflexive-memo-heading">What changed in your analytic attention?</h2>
+              <p>
+                {project.analysisMode === 'reflexive'
+                  ? 'Record surprise, positionality, tension, or an alternative reading you want to carry forward.'
+                  : 'Record whether the comparison revealed a code boundary, consistency question, or contextual assumption.'}
+                {' '}This memo stays in the human audit record and is never sent back to the AI reviewer.
+              </p>
+            </div>
+          </div>
+
+          {memos.length > 0 && (
+            <div className="reflexive-memo-list" aria-label="Saved reflexive memos">
+              {memos.map((memo) => (
+                <article key={memo.id}>
+                  <div><strong>{memo.author}</strong><time dateTime={memo.created_at}>{new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(memo.created_at))}</time></div>
+                  <p>{memo.body}</p>
+                  <small>Linked to the {decisionLabels[memo.decision].toLowerCase()} decision recorded at {new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(memo.resolution_decided_at))}.</small>
+                </article>
+              ))}
+            </div>
+          )}
+
+          <div className="reflexive-memo-editor">
+            <label className="field">
+              <span>Memo author <b>Required</b></span>
+              <input
+                value={memoAuthor}
+                aria-invalid={memoError && memoAuthor.trim().length < 2 ? 'true' : undefined}
+                onChange={(event) => setMemoAuthor(event.target.value)}
+              />
+            </label>
+            <label className="field">
+              <span>Reflexive memo <b>Required</b></span>
+              <textarea
+                rows={4}
+                value={memoBody}
+                aria-invalid={memoError && memoBody.trim().length < 12 ? 'true' : undefined}
+                aria-describedby="reflexive-memo-help"
+                placeholder="What did this comparison make visible, complicate, or leave unresolved?"
+                onChange={(event) => setMemoBody(event.target.value)}
+              />
+              <small id="reflexive-memo-help">{memoBody.length} characters · describe your analytic reflection rather than scoring the AI.</small>
+            </label>
+          </div>
+          {memoError && (memoAuthor.trim().length < 2 || memoBody.trim().length < 12) && (
+            <div className="form-errors" ref={memoErrorRef} role="alert" tabIndex={-1}>
+              <p className="form-error"><CircleAlert size={15} /> Add an author and a reflexive memo of at least 12 characters.</p>
+            </div>
+          )}
+          <div className="reflexive-memo-footer">
+            <span>{memos.length} memo{memos.length === 1 ? '' : 's'} linked to this case · append-only audit record</span>
+            <button className="button secondary" type="button" onClick={addMemo}><NotebookPen size={16} /> Add memo</button>
+          </div>
+        </section>
+      )}
     </div>
   )
 }

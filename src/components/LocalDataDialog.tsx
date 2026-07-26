@@ -109,6 +109,7 @@ export function LocalDataDialog({ state, onClose, onSaveProject, onClear }: Loca
                 <div><dt>Excerpts</dt><dd>{summary.excerptCount}</dd></div>
                 <div><dt>AI reviews</dt><dd>{summary.reviewCount}</dd></div>
                 <div><dt>Decisions</dt><dd>{summary.decisionCount}</dd></div>
+                <div><dt>Reflexive memos</dt><dd>{summary.memoCount}</dd></div>
                 <div><dt>Codebook changes</dt><dd>{summary.codebookChangeCount}</dd></div>
               </dl>
             </section>
@@ -124,7 +125,7 @@ export function LocalDataDialog({ state, onClose, onSaveProject, onClear }: Loca
             <div className="inventory-grid">
               <article><FileText /><strong>Research materials</strong><p>Project brief, codebook, excerpts and context.</p></article>
               <article><LockKeyhole /><strong>Human judgments</strong><p>Codes, rationales, confidence and the frozen first pass.</p></article>
-              <article><ShieldCheck /><strong>Review record</strong><p>AI readings, uncertainty, decisions and codebook-change history.</p></article>
+              <article><ShieldCheck /><strong>Review record</strong><p>AI readings, uncertainty, decisions, reflexive memos and codebook-change history.</p></article>
             </div>
           </section>
 

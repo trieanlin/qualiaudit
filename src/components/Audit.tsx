@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ArrowLeft, Check, Download, FileDown, FileJson, FileText, History, Info, LockKeyhole, ShieldCheck } from 'lucide-react'
+import { ArrowLeft, Check, Download, FileDown, FileJson, FileText, History, Info, LockKeyhole, NotebookPen, ShieldCheck } from 'lucide-react'
 import { buildAuditBundle, buildReviewedRows, downloadText, reviewedRowsCsv } from '../lib/export'
 import { buildAuditMethodStatement, buildHtmlAuditReport, htmlAuditReportFilename } from '../lib/htmlReport'
 import { categoryLabel, classifyCase } from '../lib/queue'
@@ -11,6 +11,7 @@ import type {
   FrozenSnapshot,
   HumanCodedExcerpt,
   ProjectBrief,
+  ReflexiveMemo,
   Resolution,
 } from '../types'
 import { ModeBadge } from './Shell'
@@ -22,6 +23,7 @@ interface AuditProps {
   frozen: FrozenSnapshot
   reviews: AiReview[]
   resolutions: Resolution[]
+  reflexiveMemos: ReflexiveMemo[]
   codebookChanges: CodebookChange[]
   onBack: () => void
   onOpenCase: (excerptId: string) => void
@@ -38,6 +40,7 @@ export function Audit({
   frozen,
   reviews,
   resolutions,
+  reflexiveMemos,
   codebookChanges,
   onBack,
   onOpenCase,
@@ -58,6 +61,7 @@ export function Audit({
     frozen,
     reviews,
     resolutions,
+    reflexiveMemos,
     codebookChanges,
   })
   const reviewDate = reviews[0]?.reviewed_at
@@ -80,6 +84,7 @@ export function Audit({
         frozen,
         reviews,
         resolutions,
+        reflexiveMemos,
         codebookChanges,
       }, {
         includeSourceText,
@@ -129,7 +134,7 @@ export function Audit({
                 checked={!includeSourceText}
                 onChange={() => setIncludeSourceText(false)}
               />
-              <span><strong>Omit excerpt and evidence text <em>Recommended</em></strong><small>IDs, codes, decisions, and rationales remain. Review them for sensitive details before sharing.</small></span>
+              <span><strong>Omit excerpt and evidence text <em>Recommended</em></strong><small>IDs, codes, decisions, rationales, and reflexive memos remain. Review them for sensitive details before sharing.</small></span>
             </label>
             <label>
               <input
@@ -153,6 +158,7 @@ export function Audit({
         <article><span><Check /></span><div><strong>{resolutions.length}</strong><small>cases resolved</small></div></article>
         <article><span><History /></span><div><strong>{changed.length}</strong><small>changed after AI exposure</small></div></article>
         <article><span><Info /></span><div><strong>{unresolved.length}</strong><small>intentionally unresolved</small></div></article>
+        <article><span><NotebookPen /></span><div><strong>{reflexiveMemos.length}</strong><small>reflexive memos</small></div></article>
         <article><span><FileText /></span><div><strong>{codebookChanges.length}</strong><small>codebook change events</small></div></article>
       </div>
 
@@ -171,7 +177,7 @@ export function Audit({
             {usedOpenAi && reviewer?.provider_request_id && <div><dt>Provider request ID</dt><dd><code>{reviewer.provider_request_id}</code></dd></div>}
             {usedOpenAi && reviewer?.provider_response_id && <div><dt>Provider response ID</dt><dd><code>{reviewer.provider_response_id}</code></dd></div>}
           </dl>
-          <div className="withheld-proof"><ShieldCheck /><p><strong>Blind-review boundary recorded</strong>Human codes, rationales, confidence, second-coder decisions, and final conclusions were withheld.</p></div>
+          <div className="withheld-proof"><ShieldCheck /><p><strong>Blind-review boundary recorded</strong>Human codes, rationales, confidence, second-coder decisions, final conclusions, and researcher-authored memos were withheld.</p></div>
         </section>
 
         <section className="audit-card statement-card">
@@ -226,6 +232,35 @@ export function Audit({
         )}
       </section>
 
+      <section className="reflexive-memo-log-section">
+        <div className="section-miniheading">
+          <div><span className="overline">REFLEXIVE MEMO LOG</span><h2>Researcher reflections linked to decisions</h2></div>
+          <span>{reflexiveMemos.length} append-only memo{reflexiveMemos.length === 1 ? '' : 's'}</span>
+        </div>
+        {reflexiveMemos.length === 0 ? (
+          <div className="empty-log">
+            <NotebookPen />
+            <h3>No reflexive memos recorded.</h3>
+            <p>Open a resolved case to record what the comparison made visible, complicated, or left unresolved.</p>
+          </div>
+        ) : (
+          <div className="reflexive-memo-log">
+            {reflexiveMemos.map((memo) => (
+              <article key={memo.id}>
+                <div className="memo-log-topline">
+                  <span className="code-pill">{memo.excerpt_id}</span>
+                  <span>{formatDate(memo.created_at)}</span>
+                </div>
+                <h3>{memo.author}</h3>
+                <p>{memo.body}</p>
+                <small>Linked to “{decisionLabels[memo.decision]}” recorded {formatDate(memo.resolution_decided_at)}.</small>
+                <button className="text-button" type="button" onClick={() => onOpenCase(memo.excerpt_id)}>Open linked case</button>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+
       <section className="decision-log-section">
         <div className="section-miniheading"><div><span className="overline">DECISION LOG</span><h2>Post-exposure decisions</h2></div><span>{resolutions.length} of {excerpts.length} cases recorded</span></div>
         {resolutions.length === 0 ? (
@@ -237,6 +272,7 @@ export function Audit({
               const ai = reviews.find((item) => item.excerpt_id === resolution.excerpt_id)
               if (!human || !ai) return null
               const category = classifyCase(human, ai, codebook)
+              const memoCount = reflexiveMemos.filter((memo) => memo.excerpt_id === resolution.excerpt_id).length
               return (
                 <article key={resolution.excerpt_id}>
                   <div className="log-timeline"><span><Check /></span><i /></div>
@@ -245,6 +281,11 @@ export function Audit({
                     <h3>{resolution.excerpt_id} · {decisionLabels[resolution.decision]}</h3>
                     <p>{resolution.rationale}</p>
                     <div className="log-codes"><span>Human <b>{human.human_code}</b></span><span>AI <b>{ai.primary_suggested_code}</b></span><span>Final <b>{resolution.final_code}</b></span>{resolution.changed_after_ai_exposure && <em>Changed after exposure</em>}</div>
+                    {memoCount > 0 && (
+                      <span className="decision-memo-count">
+                        <NotebookPen size={13} /> {memoCount} reflexive memo{memoCount === 1 ? '' : 's'}
+                      </span>
+                    )}
                     <button className="text-button" type="button" onClick={() => onOpenCase(resolution.excerpt_id)}>Open case</button>
                   </div>
                 </article>

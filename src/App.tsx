@@ -13,7 +13,7 @@ import { useReviewState } from './hooks/useReviewState'
 import { downloadText } from './lib/export'
 import { projectFileName, serialisePortableProject } from './lib/projectFile'
 import { REMOTE_REVIEW_EXACT_FIELDS, REVIEWER_CONSENT_VERSION } from './lib/reviewerProtocol'
-import type { AiReview, CodebookChange, ProjectBrief, Resolution, ReviewerMode } from './types'
+import type { AiReview, CodebookChange, ProjectBrief, ReflexiveMemo, Resolution, ReviewerMode } from './types'
 
 function cloneSample() {
   return {
@@ -49,6 +49,7 @@ export default function App() {
       frozen: null,
       reviews: [],
       resolutions: [],
+      reflexiveMemos: [],
       codebookChanges: [],
       selectedExcerptId: null,
       reviewerMode: 'mock',
@@ -66,6 +67,7 @@ export default function App() {
       frozen: null,
       reviews: [],
       resolutions: [],
+      reflexiveMemos: [],
       codebookChanges: [],
       selectedExcerptId: null,
       reviewerMode: 'mock',
@@ -102,6 +104,7 @@ export default function App() {
       },
       reviews: [],
       resolutions: [],
+      reflexiveMemos: [],
       codebookChanges: [],
       view: 'reviewing',
       reviewerMode,
@@ -134,6 +137,10 @@ export default function App() {
       view: 'queue',
       selectedExcerptId: null,
     })
+  }
+
+  const addReflexiveMemo = (memo: ReflexiveMemo) => {
+    patchState({ reflexiveMemos: [...state.reflexiveMemos, memo] })
   }
 
   const navigate = (view: typeof state.view) => patchState({ view, selectedExcerptId: null })
@@ -249,8 +256,10 @@ export default function App() {
           ai={selectedAi}
           existing={selectedResolution}
           existingCodebookChange={selectedCodebookChange}
+          memos={state.reflexiveMemos.filter((memo) => memo.excerpt_id === selectedHuman.excerpt_id)}
           onBack={() => patchState({ view: 'queue', selectedExcerptId: null })}
           onSave={saveResolution}
+          onAddMemo={addReflexiveMemo}
         />
       )}
       {state.view === 'audit' && state.frozen && (
@@ -261,6 +270,7 @@ export default function App() {
           frozen={state.frozen}
           reviews={state.reviews}
           resolutions={state.resolutions}
+          reflexiveMemos={state.reflexiveMemos}
           codebookChanges={state.codebookChanges}
           onBack={() => patchState({ view: 'queue' })}
           onOpenCase={openCase}

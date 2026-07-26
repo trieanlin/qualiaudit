@@ -77,3 +77,10 @@ These are the first scoped issues to create when the repository receives a GitHu
 **Status:** Complete
 **Outcome:** A researcher importing a selected NVivo, MAXQDA, or ATLAS.ti tabular `.xlsx` export receives a visible, editable column-mapping suggestion without a claim of native integration.
 **Acceptance:** Detection uses several column-label signals; ambiguous or missing fields fall back to human mapping; profile selection never bypasses validation; native project files remain unsupported; a fully fictional multi-sheet workbook tests the recognised shapes and metadata-sheet boundary.
+
+## QA-12 — Add decision-linked researcher reflexive memos
+
+**Phase:** Richer audit practice
+**Status:** Complete
+**Outcome:** After recording a human decision, a researcher can append a reflection about what the comparison made visible, complicated, or left unresolved.
+**Acceptance:** Each memo records author and timestamp plus the excerpt and decision snapshot it followed; saved memos are append-only; project files and JSON/HTML audits preserve them; local-data and restore summaries disclose them; neither browser nor server reviewer payloads include them.

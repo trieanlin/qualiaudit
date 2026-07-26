@@ -5,6 +5,7 @@ import type {
   FrozenSnapshot,
   HumanCodedExcerpt,
   ProjectBrief,
+  ReflexiveMemo,
   Resolution,
 } from '../types'
 import { categoryLabel, classifyCase } from './queue'
@@ -22,6 +23,7 @@ export interface HtmlAuditReportInput {
   frozen: FrozenSnapshot
   reviews: AiReview[]
   resolutions: Resolution[]
+  reflexiveMemos: ReflexiveMemo[]
   codebookChanges: CodebookChange[]
 }
 
@@ -105,8 +107,8 @@ export function buildAuditMethodStatement(
     ? `the ${reviewer?.model ?? 'configured OpenAI'} reviewer`
     : 'the deterministic local mock reviewer'
   return project.analysisMode === 'reflexive'
-    ? `We used QualiAudit to support reflexive engagement with an independently generated AI reading of ${excerptCount} coded excerpts. Human first-pass interpretations were frozen before review and withheld from ${reviewerDescription}. Divergence was treated as a prompt for reflexivity rather than an error or accuracy measure. Researchers retained final interpretive authority and documented post-exposure decisions in an audit log.`
-    : `We used QualiAudit to compare human first-pass coding with an independently generated AI reading of ${excerptCount} coded excerpts. Human codes and rationales were frozen and withheld from ${reviewerDescription}. Descriptive overlap and divergence were used to prioritise human review, not as validation or intercoder reliability. Researchers retained final decision authority and documented post-exposure decisions in an audit log.`
+    ? `We used QualiAudit to support reflexive engagement with an independently generated AI reading of ${excerptCount} coded excerpts. Human first-pass interpretations were frozen before review and withheld from ${reviewerDescription}. Divergence was treated as a prompt for reflexivity rather than an error or accuracy measure. Researchers retained final interpretive authority and documented post-exposure decisions and researcher-authored memos in an audit log.`
+    : `We used QualiAudit to compare human first-pass coding with an independently generated AI reading of ${excerptCount} coded excerpts. Human codes and rationales were frozen and withheld from ${reviewerDescription}. Descriptive overlap and divergence were used to prioritise human review, not as validation or intercoder reliability. Researchers retained final decision authority and documented post-exposure decisions and researcher-authored memos in an audit log.`
 }
 
 export function buildHtmlAuditReport(
@@ -120,6 +122,7 @@ export function buildHtmlAuditReport(
     frozen,
     reviews,
     resolutions,
+    reflexiveMemos,
     codebookChanges,
   } = input
   const exportedAt = options.exportedAt ?? new Date().toISOString()
@@ -131,6 +134,10 @@ export function buildHtmlAuditReport(
   const methodStatement = buildAuditMethodStatement(project, excerpts.length, reviewer)
   const resolutionByExcerpt = new Map(resolutions.map((resolution) => [resolution.excerpt_id, resolution]))
   const reviewByExcerpt = new Map(reviews.map((review) => [review.excerpt_id, review]))
+  const memosByExcerpt = new Map<string, ReflexiveMemo[]>()
+  for (const memo of reflexiveMemos) {
+    memosByExcerpt.set(memo.excerpt_id, [...(memosByExcerpt.get(memo.excerpt_id) ?? []), memo])
+  }
   const pendingExcerpts = excerpts.filter((excerpt) => !resolutionByExcerpt.has(excerpt.excerpt_id))
   const intentionallyUnresolved = resolutions.filter((resolution) => resolution.decision === 'unresolved')
   const changedAfterExposure = resolutions.filter((resolution) => resolution.changed_after_ai_exposure)
@@ -216,6 +223,18 @@ export function buildHtmlAuditReport(
     `
   }).join('')
 
+  const reflexiveMemosHtml = reflexiveMemos.map((memo) => `
+    <article class="decision">
+      <div class="item-topline">
+        <span class="pill">${text(memo.excerpt_id)} · ${text(decisionLabels[memo.decision])}</span>
+        <time datetime="${escapeHtml(memo.created_at)}">${formatDate(memo.created_at)}</time>
+      </div>
+      <h3>${text(memo.author)}</h3>
+      <p>${prose(memo.body)}</p>
+      <p class="meta">Linked decision recorded ${formatDate(memo.resolution_decided_at)}.</p>
+    </article>
+  `).join('')
+
   const pendingItems = pendingExcerpts.map((excerpt) => (
     `<li><strong>${text(excerpt.excerpt_id)}</strong> · no post-exposure decision recorded</li>`
   ))
@@ -229,6 +248,7 @@ export function buildHtmlAuditReport(
   const caseAppendixHtml = excerpts.map((human) => {
     const ai = reviewByExcerpt.get(human.excerpt_id)
     const resolution = resolutionByExcerpt.get(human.excerpt_id)
+    const caseMemos = memosByExcerpt.get(human.excerpt_id) ?? []
     const category = ai ? categoryLabel(classifyCase(human, ai, codebook), project.analysisMode) : 'Not reviewed'
     return `
       <article class="case">
@@ -267,6 +287,9 @@ export function buildHtmlAuditReport(
           ${resolution
             ? `<p><strong>${text(decisionLabels[resolution.decision])}.</strong> ${prose(resolution.rationale)}</p>`
             : '<p class="empty">No post-exposure decision recorded.</p>'}
+          ${caseMemos.length > 0
+            ? `<h4>Reflexive memos</h4>${caseMemos.map((memo) => `<p><strong>${text(memo.author)}.</strong> ${prose(memo.body)}</p>`).join('')}`
+            : ''}
         </section>
       </article>
     `
@@ -274,7 +297,7 @@ export function buildHtmlAuditReport(
 
   const privacyLabel = options.includeSourceText
     ? 'Full source excerpts, context, and AI evidence quotes are included.'
-    : 'Source excerpts, context, and AI evidence quotes are omitted. Coding and decision rationales remain.'
+    : 'Source excerpts, context, and AI evidence quotes are omitted. Coding, decision rationales, and researcher-authored memos remain.'
 
   return `<!doctype html>
 <html lang="en">
@@ -312,7 +335,8 @@ export function buildHtmlAuditReport(
     .report-header { padding: 34px; border: 1px solid var(--line); background: var(--panel); }
     .eyebrow { display: block; margin-bottom: 12px; font-size: 10px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; color: var(--accent); }
     .lede { max-width: 720px; margin-top: 18px; font-family: Georgia, "Times New Roman", serif; font-size: 18px; color: var(--muted); }
-    .header-meta, .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; margin-top: 28px; background: var(--line); border: 1px solid var(--line); }
+    .header-meta { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; margin-top: 28px; background: var(--line); border: 1px solid var(--line); }
+    .metrics { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px; margin-top: 28px; background: var(--line); border: 1px solid var(--line); }
     .header-meta div, .metrics div { min-width: 0; padding: 14px; background: var(--panel); }
     .header-meta dt, .compact-list dt, .guidance dt { font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
     .header-meta dd, .compact-list dd, .guidance dd { margin: 4px 0 0; overflow-wrap: anywhere; }
@@ -399,7 +423,7 @@ export function buildHtmlAuditReport(
         <div><dt>Analysis approach</dt><dd>${text(project.analysisMode === 'reflexive' ? 'Reflexive thematic analysis' : 'Codebook / framework analysis')}</dd></div>
         <div><dt>Project created</dt><dd>${formatDate(project.createdAt)}</dd></div>
         <div><dt>Report exported</dt><dd>${formatDate(exportedAt)}</dd></div>
-        <div><dt>Report format</dt><dd>QualiAudit HTML v0.1</dd></div>
+        <div><dt>Report format</dt><dd>QualiAudit HTML v0.2</dd></div>
       </dl>
       <p class="privacy-notice"><strong>Source-text setting.</strong> ${escapeHtml(privacyLabel)}</p>
       <p class="screen-note">This file is self-contained and makes no network requests. Use your browser’s Print command to create a paper or PDF copy.</p>
@@ -407,6 +431,7 @@ export function buildHtmlAuditReport(
         <div><strong>${excerpts.length}</strong><span>excerpts reviewed</span></div>
         <div><strong>${resolutions.length}</strong><span>human decisions recorded</span></div>
         <div><strong>${changedAfterExposure.length}</strong><span>changed after AI exposure</span></div>
+        <div><strong>${reflexiveMemos.length}</strong><span>reflexive memos</span></div>
         <div><strong>${codebookChanges.length}</strong><span>codebook change events</span></div>
       </div>
     </header>
@@ -441,7 +466,7 @@ export function buildHtmlAuditReport(
         </article>
         <aside class="safeguard">
           <h3>Blind-review boundary</h3>
-          <p>Human codes, rationales, confidence, second-coder decisions, and final conclusions were withheld from the independent reviewer.</p>
+          <p>Human codes, rationales, confidence, second-coder decisions, final conclusions, and researcher-authored memos were withheld from the independent reviewer.</p>
           <p><strong>AI final-decision authority:</strong> none. Human researchers retained interpretive authority.</p>
         </aside>
       </div>
@@ -474,6 +499,11 @@ export function buildHtmlAuditReport(
     </section>
 
     <section class="section">
+      <div class="section-heading"><div><span class="eyebrow">Reflexive memo log</span><h2>Researcher reflections linked to decisions</h2></div><p>${reflexiveMemos.length} append-only memo${reflexiveMemos.length === 1 ? '' : 's'} recorded.</p></div>
+      <div class="item-list">${reflexiveMemosHtml || '<p class="empty">No reflexive memos recorded.</p>'}</div>
+    </section>
+
+    <section class="section">
       <div class="section-heading"><div><span class="eyebrow">Case appendix</span><h2>Excerpt-level comparison record</h2></div><p>Source text follows the privacy setting selected at export.</p></div>
       <div class="item-list">${caseAppendixHtml}</div>
     </section>
@@ -486,7 +516,7 @@ export function buildHtmlAuditReport(
         <li>Descriptive human–AI overlap is not intercoder reliability. Cohen’s kappa is not calculated for the mock reviewer.</li>
         <li>${usedOpenAi ? 'A remote model was used; interpret its output under the recorded provider, consent, governance, and retention conditions.' : 'The deterministic mock reviewer demonstrates workflow and auditability, not model quality.'}</li>
         <li>Human decisions made after seeing AI output may be affected by anchoring or automation bias.</li>
-        <li>${options.includeSourceText ? 'This report contains source excerpts and evidence quotes. Govern it like the underlying research data.' : 'Source excerpts and evidence quotes were omitted, but codes and rationales may still contain sensitive or identifying information.'}</li>
+        <li>${options.includeSourceText ? 'This report contains source excerpts and evidence quotes. Govern it like the underlying research data.' : 'Source excerpts and evidence quotes were omitted, but codes, rationales, and reflexive memos may still contain sensitive or identifying information.'}</li>
       </ul>
     </section>
 

@@ -16,12 +16,15 @@ interface ProjectFileImportDialogProps {
 }
 
 function reviewStage(file: PortableProjectFile): string {
-  const { frozen, reviews, resolutions, codebookChanges } = file.state
+  const { frozen, reviews, resolutions, reflexiveMemos, codebookChanges } = file.state
   if (resolutions.length > 0) {
     const changeLabel = codebookChanges.length > 0
       ? ` · ${codebookChanges.length} codebook change${codebookChanges.length === 1 ? '' : 's'}`
       : ''
-    return `${resolutions.length} decision${resolutions.length === 1 ? '' : 's'} recorded${changeLabel}`
+    const memoLabel = reflexiveMemos.length > 0
+      ? ` · ${reflexiveMemos.length} reflexive memo${reflexiveMemos.length === 1 ? '' : 's'}`
+      : ''
+    return `${resolutions.length} decision${resolutions.length === 1 ? '' : 's'} recorded${memoLabel}${changeLabel}`
   }
   if (reviews.length > 0) return 'Independent review complete'
   if (frozen) return 'Human interpretation frozen'
@@ -116,7 +119,7 @@ export function ProjectFileImportDialog({ file, onClose, onRestore }: ProjectFil
               <CircleAlert size={17} />
               <div>
                 <strong>A project file contains the full research record.</strong>
-                <p>It may include original excerpts, context, human and second-coder judgments, AI reviews, rationales, decisions, and codebook-change history. Store and share it according to your research-data governance requirements.</p>
+                <p>It may include original excerpts, context, human and second-coder judgments, AI reviews, rationales, decisions, reflexive memos, and codebook-change history. Store and share it according to your research-data governance requirements.</p>
               </div>
             </div>
           </div>

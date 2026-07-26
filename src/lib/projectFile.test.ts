@@ -34,6 +34,7 @@ function completedState(): ReviewState {
       decided_at: '2026-07-25T09:00:00.000Z',
       changed_after_ai_exposure: true,
     }],
+    reflexiveMemos: [],
     codebookChanges: [],
     selectedExcerptId: null,
     reviewerMode: 'mock',
@@ -73,6 +74,20 @@ function addCodebookChange(source: ReviewState): void {
   }]
 }
 
+function addReflexiveMemo(source: ReviewState): void {
+  const resolution = source.resolutions[0]
+  source.reflexiveMemos = [{
+    memo_version: 'qualiaudit-reflexive-memo-v0.1',
+    id: 'memo-syn-002',
+    excerpt_id: resolution.excerpt_id,
+    resolution_decided_at: resolution.decided_at,
+    decision: resolution.decision,
+    author: 'Researcher',
+    body: 'The comparison foregrounded how family involvement and privacy can coexist in tension.',
+    created_at: '2026-07-25T09:03:00.000Z',
+  }]
+}
+
 describe('portable project files', () => {
   it('round-trips the complete frozen review and decision log', () => {
     const source = completedState()
@@ -82,7 +97,7 @@ describe('portable project files', () => {
 
     expect(restored).toMatchObject({
       format: 'qualiaudit-project',
-      schema_version: 2,
+      schema_version: 3,
       exported_at: '2026-07-25T09:05:00.000Z',
     })
     expect(restored.state.view).toBe('audit')
@@ -93,6 +108,19 @@ describe('portable project files', () => {
       excerpt_id: 'SYN-002',
       decision: 'keep_both',
       changed_after_ai_exposure: true,
+    })
+  })
+
+  it('round-trips append-only reflexive memos linked to a human decision', () => {
+    const source = completedState()
+    addReflexiveMemo(source)
+
+    const restored = parsePortableProjectFile(serialisePortableProject(source))
+    expect(restored.state.reflexiveMemos).toEqual(source.reflexiveMemos)
+    expect(restored.state.reflexiveMemos[0]).toMatchObject({
+      excerpt_id: 'SYN-002',
+      decision: 'keep_both',
+      author: 'Researcher',
     })
   })
 
@@ -125,8 +153,22 @@ describe('portable project files', () => {
     delete legacy.state.codebookChanges
 
     const restored = parsePortableProjectFile(JSON.stringify(legacy))
-    expect(restored.schema_version).toBe(2)
+    expect(restored.schema_version).toBe(3)
     expect(restored.state.codebookChanges).toEqual([])
+    expect(restored.state.reflexiveMemos).toEqual([])
+  })
+
+  it('migrates version 2 project files with an empty reflexive memo log', () => {
+    const legacy = JSON.parse(serialisePortableProject(completedState())) as {
+      schema_version: number
+      state: Record<string, unknown>
+    }
+    legacy.schema_version = 2
+    delete legacy.state.reflexiveMemos
+
+    const restored = parsePortableProjectFile(JSON.stringify(legacy))
+    expect(restored.schema_version).toBe(3)
+    expect(restored.state.reflexiveMemos).toEqual([])
   })
 
   it('normalises an invalid case selection to the review queue', () => {
@@ -193,6 +235,16 @@ describe('portable project files', () => {
 
     expect(() => parsePortableProjectFile(serialisePortableProject(source))).toThrow(
       /does not match the frozen codebook baseline/,
+    )
+  })
+
+  it('rejects a reflexive memo without a linked human decision', () => {
+    const source = completedState()
+    addReflexiveMemo(source)
+    source.reflexiveMemos[0].excerpt_id = 'SYN-003'
+
+    expect(() => parsePortableProjectFile(serialisePortableProject(source))).toThrow(
+      /case with a recorded human decision/,
     )
   })
 
