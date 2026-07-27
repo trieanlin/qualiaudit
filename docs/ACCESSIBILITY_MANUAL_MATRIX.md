@@ -60,6 +60,22 @@ These checks are not screen-reader substitutes and need their own evidence:
 - reduced-motion behaviour at operating-system and browser level;
 - unusually long code names, excerpts, rationales, and translated text.
 
+## Safari zoom and text-spacing tasks
+
+Environment: macOS 26.5.2, Safari 26.5.2, keyboard and bundled fictional
+synthetic data. Test dates and exact observations belong in the table below.
+At 400% zoom, ordinary page content must reflow without requiring horizontal
+page scrolling. A contained horizontal region remains acceptable for data
+tables whose two-dimensional relationships need to stay visible.
+
+| ID | Task and expected result | Result | Observed result / issue |
+| --- | --- | --- | --- |
+| ZTS-SAF-01 | At 200% and 400% zoom, inspect the landing page. The heading, introduction, reassurance, and all three project-entry actions remain visible, readable, and operable without horizontal page scrolling. | Pass | At both 200% and 400% zoom on 2026-07-27, the landing page reflowed cleanly: no overlap, lost content, unusable action, or horizontal page scrolling was observed. |
+| ZTS-SAF-02 | At 400% zoom, open the synthetic review and inspect Project brief, Review materials, and Prepare blind review. Stage navigation and primary actions remain reachable; content does not overlap or disappear. A data table may scroll inside its labelled table region. | Pass | At 400% zoom on 2026-07-27, stage navigation, material controls, contained data tables, reviewer-boundary information, and the freeze action remained visible and operable without overlap, lost content, or horizontal page scrolling. |
+| ZTS-SAF-03 | At 400% zoom, run the mock review, change queue filters, open a case, trigger and correct a resolution error, and save a decision. Queue cards, controls, definitions, radio options, errors, and actions reflow without horizontal page scrolling. | Pass | At 400% zoom on 2026-07-27, review progress, queue views and filters, case comparison, code definitions, resolution controls, validation feedback, and decision saving remained readable and operable without overlap, lost content, or horizontal page scrolling. |
+| ZTS-SAF-04 | At 400% zoom, open Data & privacy and the audit trail's HTML-report options. Dialog content, confirmations, export choices, privacy warning, and actions remain visible and operable without clipped text. | Pass | At 400% zoom on 2026-07-27, the local-data dialog and audit trail—including export controls, HTML-report source-text choices, privacy messaging, and actions—remained readable and operable without overlap, clipping, lost content, or horizontal page scrolling. |
+| ZTS-SAF-05 | With WCAG text-spacing overrides applied (line height 1.5, paragraph spacing 2× font size, letter spacing 0.12 em, word spacing 0.16 em), repeat the landing, materials, queue, case, dialog, and audit checks. No text or control is clipped, overlapped, or lost. | Pass | On 2026-07-27, the landing, Review materials, freeze, queue, case-resolution, Data & privacy, and audit views all remained readable and operable with the required spacing overrides. Text became more widely spaced without clipping, overlap, lost content, unusable controls, or horizontal page scrolling. |
+
 ## Issue record format
 
 For every failure or uncertain result, record:
