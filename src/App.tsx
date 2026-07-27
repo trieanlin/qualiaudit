@@ -211,6 +211,7 @@ export default function App() {
         project={activeProject}
         canReview={state.reviews.length > 0}
         canAudit={Boolean(state.frozen && state.reviews.length)}
+        lockStageNavigation={state.view === 'setup' && !state.frozen}
         onNavigate={navigate}
         onReset={handleReset}
         onSaveProject={saveProjectFile}

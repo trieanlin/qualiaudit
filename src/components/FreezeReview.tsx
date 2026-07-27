@@ -366,7 +366,9 @@ export function Reviewing({
         <div className="progress-card">
           <div>
             <span>{reviewerMode === 'mock' ? 'Deterministic mock reviewer' : 'OpenAI server-side reviewer'}</span>
-            <strong>{reviewerMode === 'mock' ? `${processed} / ${excerpts.length} excerpts` : remoteStatus === 'sending' ? 'Awaiting structured review' : 'Preparing request'}</strong>
+            <strong role="status" aria-atomic="true">
+              {reviewerMode === 'mock' ? `${processed} / ${excerpts.length} excerpts` : remoteStatus === 'sending' ? 'Awaiting structured review' : 'Preparing request'}
+            </strong>
           </div>
           <div
             className={reviewerMode === 'openai' ? 'progress-track indeterminate' : 'progress-track'}

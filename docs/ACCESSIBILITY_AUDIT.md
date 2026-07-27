@@ -49,7 +49,9 @@ The engineering pass includes the synthetic review workflow at desktop and narro
 
 Before describing QualiAudit as conforming to WCAG 2.2 AA, the project still needs:
 
-- task-based VoiceOver with Safari testing on macOS/iOS;
+- completion of the
+  [task-based assistive-technology matrix](ACCESSIBILITY_MANUAL_MATRIX.md),
+  beginning with VoiceOver and Safari on macOS;
 - task-based NVDA with Firefox or Chrome testing on Windows;
 - a documented 400% zoom and text-spacing matrix across supported browsers;
 - manual non-text contrast review for every state, including imported error/warning combinations;

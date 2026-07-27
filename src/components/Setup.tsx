@@ -75,7 +75,7 @@ export function Setup({ project, onContinue, locked = false }: SetupProps) {
 
         <div className="form-footer">
           <span><GitCompareArrows size={16} /> This framing travels with the audit.</span>
-          <button className="button primary" type="submit" disabled={!valid}>{locked ? 'Return to review queue' : 'Review materials'} <ArrowRight size={17} /></button>
+          <button className="button primary" type="submit" disabled={!valid}>{locked ? 'Return to review queue' : 'Save & review materials'} <ArrowRight size={17} /></button>
         </div>
       </form>
     </div>
