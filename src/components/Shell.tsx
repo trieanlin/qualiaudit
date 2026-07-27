@@ -8,6 +8,7 @@ interface ShellProps {
   children: React.ReactNode
   canReview: boolean
   canAudit: boolean
+  lockStageNavigation?: boolean
   onNavigate: (view: AppView) => void
   onReset: () => void
   onSaveProject: () => void
@@ -66,10 +67,22 @@ export function AppHeader({
   )
 }
 
-export function Shell({ view, project, children, canReview, canAudit, onNavigate, onReset, onSaveProject, onManageData }: ShellProps) {
+export function Shell({
+  view,
+  project,
+  children,
+  canReview,
+  canAudit,
+  lockStageNavigation = false,
+  onNavigate,
+  onReset,
+  onSaveProject,
+  onManageData,
+}: ShellProps) {
   const activeKey = view === 'freeze' ? 'materials' : view === 'reviewing' || view === 'case' ? 'queue' : view
   const currentIndex = viewOrder.indexOf(view)
   const enabled = (key: AppView) => {
+    if (lockStageNavigation && key !== 'setup') return false
     if (key === 'setup' || key === 'materials') return Boolean(project)
     if (key === 'queue') return canReview
     if (key === 'audit') return canAudit

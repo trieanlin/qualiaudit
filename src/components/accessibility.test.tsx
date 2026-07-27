@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import axe from 'axe-core'
 import { useState } from 'react'
@@ -117,6 +117,29 @@ describe('keyboard and focus behaviour', () => {
     localStorage.removeItem(STORAGE_KEY)
   })
 
+  it('requires the project form to save method changes before stage navigation', async () => {
+    localStorage.removeItem(STORAGE_KEY)
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: /Open synthetic review/ }))
+    await user.click(screen.getByRole('button', { name: 'Project brief' }))
+    await user.click(screen.getByRole('button', { name: /Reflexive Thematic Analysis/ }))
+
+    const reviewProgress = screen.getByRole('complementary', { name: 'Review progress' })
+    expect(within(reviewProgress).getByRole('button', { name: /Review materials/ })).toBeDisabled()
+    await user.click(screen.getByRole('button', { name: /Save & review materials/ }))
+    await waitFor(() => expect(
+      screen.getByRole('heading', { level: 1, name: 'Inspect the record that will be frozen.' }),
+    ).toHaveFocus())
+
+    expect(screen.getByText('Reflexive thematic')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Project brief' }))
+    expect(screen.getByRole('button', { name: /Reflexive Thematic Analysis/ }))
+      .toHaveAttribute('aria-pressed', 'true')
+    localStorage.removeItem(STORAGE_KEY)
+  })
+
   it('exposes determinate progress without repeatedly announcing the whole page', () => {
     render(
       <Reviewing
@@ -138,6 +161,7 @@ describe('keyboard and focus behaviour', () => {
     expect(progress).toHaveAttribute('aria-valuemin', '0')
     expect(progress).toHaveAttribute('aria-valuemax', String(SAMPLE_EXCERPTS.length))
     expect(progress).toHaveAttribute('aria-valuenow', '0')
+    expect(screen.getByRole('status')).toHaveTextContent(`0 / ${SAMPLE_EXCERPTS.length} excerpts`)
     expect(screen.getByText('Creating a separate reading.').closest('[aria-live]')).toBeNull()
   })
 
