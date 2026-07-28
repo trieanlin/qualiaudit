@@ -76,6 +76,22 @@ tables whose two-dimensional relationships need to stay visible.
 | ZTS-SAF-04 | At 400% zoom, open Data & privacy and the audit trail's HTML-report options. Dialog content, confirmations, export choices, privacy warning, and actions remain visible and operable without clipped text. | Pass | At 400% zoom on 2026-07-27, the local-data dialog and audit trail—including export controls, HTML-report source-text choices, privacy messaging, and actions—remained readable and operable without overlap, clipping, lost content, or horizontal page scrolling. |
 | ZTS-SAF-05 | With WCAG text-spacing overrides applied (line height 1.5, paragraph spacing 2× font size, letter spacing 0.12 em, word spacing 0.16 em), repeat the landing, materials, queue, case, dialog, and audit checks. No text or control is clipped, overlapped, or lost. | Pass | On 2026-07-27, the landing, Review materials, freeze, queue, case-resolution, Data & privacy, and audit views all remained readable and operable with the required spacing overrides. Text became more widely spaced without clipping, overlap, lost content, unusable controls, or horizontal page scrolling. |
 
+## Safari reduced-motion and non-text-contrast tasks
+
+Environment: macOS 26.5.2, Safari 26.5.2, keyboard and bundled fictional
+synthetic data. Reduced-motion checks use the operating-system accessibility
+setting rather than a console override. Contrast checks cover the visible
+boundaries and state indicators needed to identify and operate controls; they
+do not replace screen-reader or text-contrast testing.
+
+| ID | Task and expected result | Result | Observed result / issue |
+| --- | --- | --- | --- |
+| RMC-SAF-01 | Enable **Reduce motion** in macOS, reload the landing page, and open the synthetic review. No decorative animation, smooth scrolling, or transition is required to understand or operate the page; page changes remain clear. | Pass | On 2026-07-27 with the macOS Reduce motion setting enabled, the landing and synthetic-review page changes remained clear and fully operable; no motion was required to understand the navigation. |
+| RMC-SAF-02 | With **Reduce motion** still enabled, freeze the record and run the mock review. The progress state and completion remain understandable without relying on orbiting, pulsing, or animated movement. | Pass | On 2026-07-28 with Reduce motion enabled, the maintainer completed the freeze and mock-review transition without relying on animation; progress and completion remained understandable from the visible text and page structure. |
+| RMC-SAF-03 | Use Tab and Shift+Tab on the landing, stage navigation, queue filters, a case, Data & privacy, and audit controls. The current keyboard focus remains visibly identifiable on every operable element. | Pass | On 2026-07-28, the maintainer traversed the landing, review stages, queue, case, local-data dialog, and audit controls with Tab and Shift+Tab. Keyboard focus remained clearly visible and was not clipped or lost on any tested operable element. |
+| RMC-SAF-04 | Inspect selected tabs, analysis-method choices, queue filters, radio decisions, and HTML-report source-text choices. Selected state remains distinguishable through a visible boundary, indicator, icon, or text—not colour alone. | Pass | On 2026-07-28, the maintainer checked analysis-method choices, material tabs, queue filters, resolution options, and HTML-report choices. Every tested selected state remained visibly identifiable through boundaries, indicators, position, or control state rather than colour alone. |
+| RMC-SAF-05 | Trigger representative warning and error states in Review materials or Human resolution, and inspect the remote-review warning shown when it is unavailable. Warning/error regions and their controls remain distinguishable from adjacent surfaces and include text or icon cues—not colour alone. | Pass | On 2026-07-28, the maintainer triggered a Human resolution validation error and inspected the unavailable remote-review warning. Both states were recognisable through explicit text, iconography, and a visually distinct region rather than colour alone. |
+
 ## Issue record format
 
 For every failure or uncertain result, record:
