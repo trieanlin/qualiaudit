@@ -92,6 +92,23 @@ do not replace screen-reader or text-contrast testing.
 | RMC-SAF-04 | Inspect selected tabs, analysis-method choices, queue filters, radio decisions, and HTML-report source-text choices. Selected state remains distinguishable through a visible boundary, indicator, icon, or text—not colour alone. | Pass | On 2026-07-28, the maintainer checked analysis-method choices, material tabs, queue filters, resolution options, and HTML-report choices. Every tested selected state remained visibly identifiable through boundaries, indicators, position, or control state rather than colour alone. |
 | RMC-SAF-05 | Trigger representative warning and error states in Review materials or Human resolution, and inspect the remote-review warning shown when it is unavailable. Warning/error regions and their controls remain distinguishable from adjacent surfaces and include text or icon cues—not colour alone. | Pass | On 2026-07-28, the maintainer triggered a Human resolution validation error and inspected the unavailable remote-review warning. Both states were recognisable through explicit text, iconography, and a visually distinct region rather than colour alone. |
 
+## Safari long and mixed-language content tasks
+
+Environment: macOS 26.5.2, Safari 26.5.2, keyboard, and the fictional files
+in `test-fixtures/accessibility`. These fixtures deliberately contain long
+unbroken code identifiers, long English and Chinese excerpts, long rationales,
+mixed-language context, and long source labels. They do not contain real
+research data.
+
+| ID | Task and expected result | Result | Observed result / issue |
+| --- | --- | --- | --- |
+| LUC-SAF-01 | Import the long/mixed-language codebook and excerpts. Validation completes without corrupting Unicode or silently shortening identifiers, and both material tables remain readable through wrapping or contained table scrolling. | Pass | On 2026-07-29, Safari imported all 7 code definitions and both excerpts from the fictional fixture files. Long English identifiers and Chinese text remained intact, and both material tables stayed readable through their contained table regions. |
+| LUC-SAF-02 | Freeze the imported record and run the local mock reviewer. The checkpoint, progress state, and queue complete without overflow, missing records, or an invalid reviewer code. | Pass | On 2026-07-29, the checkpoint showed 2 excerpts and 7 codes, the local deterministic reviewer completed, and the queue contained both records with valid codebook readings. |
+| LUC-SAF-03 | Inspect the queue and open both cases. Long human codes, source labels, excerpts, rationales, second-coder records, AI readings, and definitions wrap or reflow without covering controls or disappearing. | Fail | On 2026-07-29, the queue and both excerpts remained readable, but the first case's long unbroken English first-human code crossed its comparison column and covered the Chinese second-human code. The Chinese-first case wrapped normally. This is a visible information-overlap defect for long Latin-script identifiers. |
+| LUC-SAF-03-R1 | Retest both case views after allowing unbroken code identifiers to wrap inside bounded comparison columns. No first- or second-human code may overlap the other column at desktop or narrow widths. | Not run | Awaiting preview retest after the wrapping fix. |
+| LUC-SAF-04 | Resolve one case with a deliberately long mixed-language rationale, then inspect the decision log and codebook-change or memo controls that become available. Saved content remains readable and associated with the correct case. | Not run | — |
+| LUC-SAF-05 | Export reviewed CSV, JSON audit, and an HTML report containing source text. Reopen or inspect each file and confirm the complete long identifiers and Chinese text remain present and readable without character corruption. | Not run | — |
+
 ## Issue record format
 
 For every failure or uncertain result, record:

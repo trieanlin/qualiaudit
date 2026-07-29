@@ -34,6 +34,38 @@ describe('codebook change resolution', () => {
     expect(screen.getByText('AI reading').closest('section')).not.toContainElement(secondHumanSection)
   })
 
+  it('marks long unbroken code identifiers for safe wrapping in the comparison', () => {
+    const longCode = 'SUSTAINED_ENGAGEMENT_WITH_HOME_SLEEP_MONITORING_DESPITE_CHANGING_DAILY_ROUTINES_FAMILY_EXPECTATIONS_TECHNICAL_INTERRUPTIONS_AND_UNCERTAIN_PERCEIVED_VALUE'
+    const human = {
+      ...SAMPLE_EXCERPTS[1],
+      human_code: longCode,
+      second_coder_code: '家庭反馈与个人隐私边界之间的协商',
+    }
+    const ai = runMockBlindReview(
+      buildBlindReviewPayload(SAMPLE_PROJECT, SAMPLE_CODEBOOK, SAMPLE_EXCERPTS),
+    )[1]
+
+    render(
+      <CaseResolution
+        project={SAMPLE_PROJECT}
+        codebook={SAMPLE_CODEBOOK}
+        human={human}
+        excerpts={[...SAMPLE_EXCERPTS, human]}
+        ai={ai}
+        memos={[]}
+        onBack={vi.fn()}
+        onSave={vi.fn()}
+        onAddMemo={vi.fn()}
+      />,
+    )
+
+    expect(screen.getAllByText(longCode)).not.toHaveLength(0)
+    screen.getAllByText(longCode).forEach((identifier) => {
+      expect(identifier).toHaveClass('code-identifier')
+    })
+    expect(screen.getByText('家庭反馈与个人隐私边界之间的协商')).toHaveClass('code-identifier')
+  })
+
   it('records before/after guidance and unresolved recoding without changing the frozen codebook', async () => {
     const user = userEvent.setup()
     const onSave = vi.fn()

@@ -233,7 +233,7 @@ export function Audit({
                   <div className="second-human-audit-codes">
                     <span>First human <b>{comparison.first_coder_code}</b></span>
                     <GitCompareArrows aria-hidden="true" />
-                    <span>Second human <b>{comparison.second_coder_code}</b></span>
+                    <span>Second human <b className="code-identifier">{comparison.second_coder_code}</b></span>
                   </div>
                   <p>{comparison.second_coder_rationale || 'No second-human rationale was supplied.'}</p>
                   <button className="text-button" type="button" onClick={() => onOpenCase(comparison.excerpt_id)}>Open case</button>
@@ -336,7 +336,7 @@ export function Audit({
                     <div className="log-topline"><span className={`category-badge category-${category}`}>{categoryLabel(category, project.analysisMode)}</span><span>{formatDate(resolution.decided_at)}</span></div>
                     <h3>{resolution.excerpt_id} · {decisionLabels[resolution.decision]}</h3>
                     <p>{resolution.rationale}</p>
-                    <div className="log-codes"><span>Human <b>{human.human_code}</b></span><span>AI <b>{ai.primary_suggested_code}</b></span><span>Final <b>{resolution.final_code}</b></span>{resolution.changed_after_ai_exposure && <em>Changed after exposure</em>}</div>
+                    <div className="log-codes"><span>Human <b className="code-identifier">{human.human_code}</b></span><span>AI <b className="code-identifier">{ai.primary_suggested_code}</b></span><span>Final <b className="code-identifier">{resolution.final_code}</b></span>{resolution.changed_after_ai_exposure && <em>Changed after exposure</em>}</div>
                     {memoCount > 0 && (
                       <span className="decision-memo-count">
                         <NotebookPen size={13} /> {memoCount} reflexive memo{memoCount === 1 ? '' : 's'}

@@ -253,9 +253,9 @@ export function CaseResolution({
             </span>
           </div>
           <div className="second-human-codes">
-            <div><small>FIRST HUMAN</small><strong>{human.human_code}</strong></div>
+            <div><small>FIRST HUMAN</small><strong className="code-identifier">{human.human_code}</strong></div>
             <GitCompareArrows aria-hidden="true" />
-            <div><small>SECOND HUMAN</small><strong>{human.second_coder_code}</strong></div>
+            <div><small>SECOND HUMAN</small><strong className="code-identifier">{human.second_coder_code}</strong></div>
           </div>
           <p>{human.second_coder_rationale || 'No second-human rationale was supplied.'}</p>
           <div className="second-human-note" role="note">
@@ -267,7 +267,7 @@ export function CaseResolution({
       <div className="reading-comparison">
         <section className="reading-panel human-panel">
           <div className="panel-kicker"><span className="avatar human-avatar"><UserRound /></span><span><small>FROZEN BEFORE AI EXPOSURE</small><strong>Human first-pass</strong></span></div>
-          <div className="reading-code"><small>CODE</small><strong>{human.human_code}</strong></div>
+          <div className="reading-code"><small>CODE</small><strong className="code-identifier">{human.human_code}</strong></div>
           <p>{human.human_rationale || 'No rationale was supplied.'}</p>
           <div className="reading-meta"><span>Confidence <b>{human.human_confidence ?? 'not stated'}</b></span></div>
         </section>
@@ -276,8 +276,8 @@ export function CaseResolution({
 
         <section className="reading-panel ai-panel">
           <div className="panel-kicker"><span className="avatar ai-avatar">✦</span><span><small>INDEPENDENT MOCK REVIEW</small><strong>AI reading</strong></span></div>
-          <div className="reading-code"><small>PRIMARY READING</small><strong>{ai.primary_suggested_code}</strong></div>
-          {ai.alternative_code && <div className="alternative-code"><small>Alternative</small><strong>{ai.alternative_code}</strong></div>}
+          <div className="reading-code"><small>PRIMARY READING</small><strong className="code-identifier">{ai.primary_suggested_code}</strong></div>
+          {ai.alternative_code && <div className="alternative-code"><small>Alternative</small><strong className="code-identifier">{ai.alternative_code}</strong></div>}
           <p>{ai.rationale}</p>
           <blockquote className="evidence-quote"><Eye size={15} /> “{ai.evidence_quote}”</blockquote>
           {ai.needs_more_context && <div className="ai-flag"><CircleAlert size={15} /> Reviewer requested more context</div>}
