@@ -1,7 +1,7 @@
 {
   "name": "qualiaudit",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.2.1",
   "type": "module",
   "description": "A method-aware, tool-agnostic review layer for qualitative coding.",
   "scripts": {

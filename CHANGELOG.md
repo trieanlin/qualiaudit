@@ -4,6 +4,8 @@ All notable changes to QualiAudit are documented here. The project follows [Sema
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-07-30
+
 ### Added
 
 - An ethics-gated formative evaluation kit for the fictional synthetic demo,
@@ -13,12 +15,29 @@ All notable changes to QualiAudit are documented here. The project follows [Sema
 - A clearly labelled internal, non-participant dry-run record covering both
   method routes without presenting the rehearsal as product-validation
   evidence.
+- A task-based Safari manual-test record covering keyboard and VoiceOver
+  navigation, zoom, WCAG text spacing, reduced motion, contrast preferences,
+  long mixed-language content, decision records, and CSV/JSON/HTML export
+  integrity.
+- Fictional long-identifier and mixed Chinese-English import fixtures for
+  repeatable reflow and export testing.
 
 ### Changed
 
 - The moderated session guide now directs participants from the demo's initial
   Review materials screen to Project brief before method and material
   orientation.
+- The project-brief action now makes its save-and-continue behaviour explicit,
+  and later workflow stages remain unavailable until the initial framing has
+  been saved.
+
+### Fixed
+
+- Blind-review progress updates now expose an atomic live status for assistive
+  technologies.
+- Long unbroken code identifiers now wrap inside bounded first-human,
+  second-human, AI-reading, codebook, and audit-log regions at desktop and
+  narrow viewport widths.
 
 ## [0.2.0] - 2026-07-26
 
