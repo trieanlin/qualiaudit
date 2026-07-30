@@ -4,6 +4,12 @@ All notable changes to QualiAudit are documented here. The project follows [Sema
 
 ## [Unreleased]
 
+### Changed
+
+- GitHub CI now uses the Node 24-based `actions/checkout@v6` and
+  `actions/setup-node@v6` runtimes while continuing to test the application
+  with the Node version pinned in `.nvmrc`.
+
 ## [0.2.1] - 2026-07-30
 
 ### Added
