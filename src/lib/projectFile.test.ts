@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { SAMPLE_CODEBOOK, SAMPLE_EXCERPTS, SAMPLE_PROJECT } from '../data/sample'
 import type { ReviewState } from '../hooks/useReviewState'
+import { APPLICATION_VERSION } from './appVersion'
 import { buildBlindReviewPayload, runMockBlindReview } from './reviewer'
 import {
   parsePortableProjectFile,
@@ -101,7 +102,7 @@ describe('portable project files', () => {
       exported_at: '2026-07-25T09:05:00.000Z',
       application: {
         name: 'QualiAudit',
-        version: '0.2.0',
+        version: APPLICATION_VERSION,
       },
     })
     expect(restored.state.view).toBe('audit')

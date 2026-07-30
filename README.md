@@ -16,7 +16,7 @@ The demo uses fictional data and defaults to a reviewer that runs entirely in th
 
 ## Current release
 
-QualiAudit v0.2.0 adds trustworthy tabular import, portable local project files, an optional consent-gated server reviewer boundary, richer human-led audit records, safe queue triage, printable HTML reporting, and an accessibility engineering pass. Read the [v0.2.0 release notes](docs/RELEASE_NOTES_0.2.0.md).
+QualiAudit v0.2.1 is a compatibility and research-readiness patch for the v0.2 workflow. It improves VoiceOver/Safari progression and status announcements, makes long and mixed-language identifiers reflow safely, records manual Safari accessibility evidence, and adds an ethics-gated formative evaluation kit. Read the [v0.2.1 release notes](docs/RELEASE_NOTES_0.2.1.md) and the underlying [v0.2.0 feature notes](docs/RELEASE_NOTES_0.2.0.md).
 
 This remains a research prototype. The release does not claim suitability for sensitive research data, institutional approval, model validity, intercoder reliability, or WCAG conformance.
 
@@ -208,7 +208,8 @@ The current prototype does not:
 - [Formative evaluation kit](docs/research/README.md)
 - [Issue-ready backlog](docs/ISSUE_BACKLOG.md)
 - [Release privacy and secret checklist](docs/RELEASE_CHECKLIST.md)
-- [v0.2.0 release notes](docs/RELEASE_NOTES_0.2.0.md)
+- [v0.2.1 release notes](docs/RELEASE_NOTES_0.2.1.md)
+- [v0.2.0 feature release notes](docs/RELEASE_NOTES_0.2.0.md)
 
 ## Contributing
 
