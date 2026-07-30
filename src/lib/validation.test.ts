@@ -3,7 +3,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { SAMPLE_CODEBOOK, SAMPLE_EXCERPTS } from '../data/sample'
-import type { HumanCodedExcerpt } from '../types'
+import type { CodeDefinition, HumanCodedExcerpt } from '../types'
 import { parseDelimitedText } from './csv'
 import { validateCodebook, validateExcerpts } from './validation'
 
@@ -11,10 +11,22 @@ const fixtureRows = (name: string) => parseDelimitedText(
   readFileSync(`test-fixtures/import/${name}`, 'utf8'),
 ).rows as unknown as HumanCodedExcerpt[]
 
+const accessibilityFixtureRows = <Row>(name: string) => parseDelimitedText(
+  readFileSync(`test-fixtures/accessibility/${name}`, 'utf8'),
+).rows as unknown as Row[]
+
 describe('material validation', () => {
   it('accepts the bundled synthetic fixtures', () => {
     expect(validateCodebook(SAMPLE_CODEBOOK)).toEqual([])
     expect(validateExcerpts(SAMPLE_EXCERPTS, SAMPLE_CODEBOOK)).toEqual([])
+  })
+
+  it('accepts the long mixed-language accessibility fixtures', () => {
+    const codebook = accessibilityFixtureRows<CodeDefinition>('long-unicode-codebook.csv')
+    const excerpts = accessibilityFixtureRows<HumanCodedExcerpt>('long-unicode-excerpts.csv')
+
+    expect(validateCodebook(codebook)).toEqual([])
+    expect(validateExcerpts(excerpts, codebook)).toEqual([])
   })
 
   it('reports duplicate and incomplete code definitions as explicit rule checks', () => {
