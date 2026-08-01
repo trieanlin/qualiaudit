@@ -131,6 +131,10 @@ feasible. Disagreement may remain in the report.
 
 ## Product decision matrix
 
+Use a separate [evidence-linked product decision record](PRODUCT_DECISION_TEMPLATE.md)
+for each candidate change. Store completed records with the approved study data,
+not in the public repository.
+
 For each candidate change, record:
 
 - problem statement;

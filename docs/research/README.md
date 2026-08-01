@@ -35,6 +35,12 @@ information sheet or consent form.
   negative-case handling, and reporting limits.
 - [Governance gate](GOVERNANCE_GATE.md) — prerequisites that must be resolved
   locally before recruitment.
+- [Study manifest template](STUDY_MANIFEST_TEMPLATE.md) — freezes the approved
+  protocol, product build, task configuration, data boundary, and operational
+  readiness without publishing local approvals or participant information.
+- [Evidence-linked product decision template](PRODUCT_DECISION_TEMPLATE.md) —
+  traces candidate changes to observations, competing explanations, method-
+  specific effects, and reasons for change or non-change.
 - [Internal protocol dry-run — 2026-07-26](INTERNAL_DRY_RUN_2026-07-26.md) —
   a synthetic, non-participant rehearsal record; it is not study evidence.
 
@@ -45,12 +51,15 @@ information sheet or consent form.
 2. Adapt the materials to the approved local study and participant population.
 3. Dry-run the synthetic tasks with the study team; mark the record `DRY-RUN`,
    not `PARTICIPANT`.
-4. Freeze the approved protocol version before recruitment.
-5. Conduct sessions using institution-approved information and consent materials.
-6. Analyse Codebook / Framework and Reflexive Mode sessions separately before
+4. Complete and freeze a study manifest in the approved research location before
+   recruitment; do not commit the completed copy to this repository.
+5. Freeze the approved protocol version before recruitment.
+6. Conduct sessions using institution-approved information and consent materials.
+7. Analyse Codebook / Framework and Reflexive Mode sessions separately before
    considering shared patterns.
-7. Publish limitations and negative findings alongside any resulting product
-   change.
+8. Record each candidate product change in an evidence-linked decision record.
+9. Publish limitations and negative findings alongside any resulting product
+   change or decision not to change the product.
 
 The app has no study telemetry. Observation records are created outside
 QualiAudit and must be stored only in the approved research location.

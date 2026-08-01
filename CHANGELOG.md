@@ -4,6 +4,13 @@ All notable changes to QualiAudit are documented here. The project follows [Sema
 
 ## [Unreleased]
 
+### Added
+
+- Formative-study operation templates now freeze the approved build and protocol
+  configuration and trace product decisions to method-specific evidence,
+  disconfirming cases, risks, and reasons for non-change without placing
+  completed participant records in the public repository.
+
 ### Changed
 
 - GitHub CI now uses the Node 24-based `actions/checkout@v6` and

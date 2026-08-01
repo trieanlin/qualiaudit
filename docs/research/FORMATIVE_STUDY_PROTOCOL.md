@@ -95,6 +95,8 @@ into a causal experiment.
 - Deployed or local QualiAudit synthetic demo at the frozen study version.
 - [Session guide](SESSION_GUIDE.md).
 - One copy of the [observation template](OBSERVATION_TEMPLATE.md) per session.
+- A frozen [study manifest](STUDY_MANIFEST_TEMPLATE.md) stored in the approved
+  research location.
 - Institution-approved participant information and consent materials.
 - Approved accessibility accommodations and, if applicable, approved recording
   tools.
